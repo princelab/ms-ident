@@ -3,11 +3,26 @@ source "http://rubygems.org"
 # Example:
 #   gem "activesupport", ">= 2.3.5"
 
+dev_gems = {
+    "spec-more" => ">= 0.0.4",
+    "bundler" => "~> 1.0.0",
+    "jeweler" => "~> 1.5.2",
+    "rcov" => ">= 0",
+}
+
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.
 group :development do
-  gem "spec-more", ">= 0.0.4"
-  gem "bundler", "~> 1.0.0"
-  gem "jeweler", "~> 1.5.2"
-  gem "rcov", ">= 0"
+  dev_gems.each do |name,version_string|
+    gem name, version_string
+  end
+end
+
+# Add dependencies to develop your gem here.
+# Include everything needed to run rake, tests, features, etc.
+group :development_large do
+  dev_gems.each do |name,version_string|
+    gem name, version_string
+  end
+  gem "ms-testdata", ">= 0"
 end
