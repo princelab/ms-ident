@@ -1,14 +1,12 @@
-
-require 'sample_enzyme'
-require 'ms/parser/mzxml'
-require 'hash_by'
-require 'set_from_hash'
-require 'spec_id/bioworks'
-require 'instance_var_set_from_hash'
-require 'ms/msrun'
-require 'spec_id/srf'
-require 'spec_id/sequest/params'
-require 'fileutils'
+require 'nokogiri'
+require 'ms/ident/pepxml/sample_enzyme'
+#require 'ms/parser/mzxml'
+#require 'hash_by'
+#require 'set_from_hash'
+#require 'spec_id/bioworks'
+#require 'instance_var_set_from_hash'
+#require 'ms/msrun'
+#require 'spec_id/srf'
 
 class Numeric
   # returns a string with a + or - on the front
@@ -23,74 +21,71 @@ end
 
 
 module Ms::Ident ; end
-class Ms::Ident::PepXML; end
+class Ms::Ident::Pepxml; end
 
-class Ms::Ident::PepXML::MSMSPipelineAnalysis
-  include SpecIDXML
+class Ms::Ident::Pepxml::MSMSPipelineAnalysis
+  XMLNS = "http://regis-web.systemsbiology.net/pepXML"
+  XMLNS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
+  # (this doesn't actually exist), also, the space is supposed to be there
+  XSI_SCHEMA_LOCATION_BASE = "http://regis-web.systemsbiology.net/pepXML /tools/bin/TPP/tpp/schema/pepXML_v"
+  # the only additions concerning a writer are from v18 are to the 'spectrum': retention_time_sec and activationMethodType
+  PEPXML_VERSION = 115
+
+  #include SpecIDXML
   # Version 1.2.3
-  attr_writer :date
-  attr_writer :xmlns, :xmlns_xsi, :xsi_schemaLocation
-  attr_accessor :summary_xml 
-  # Version 2.3.4
-  attr_writer :xmlns, :xmlns_xsi, :xsi_schema_location
+  #attr_writer :date
+  #attr_writer :xmlns, :xmlns_xsi, :xsi_schemaLocation
+  #attr_accessor :summary_xml 
+  
+  attr_accessor :xmlns
+  attr_accessor :xmlns_xsi
+  attr_accessor :xsi_schema_location
+  # an Integer
   attr_accessor :pepxml_version
+  # self referential path to the outputfile
+  attr_accessor :summary_xml
   attr_accessor :msms_run_summary
+  attr_writer :date
 
   # if block given, sets msms_run_summary to block
-  def initialize(hash=nil)
-    @xmlns = nil
-    @xmlns_xsi = nil
-    @xsi_schema_location = nil
-    if hash
-      self.set_from_hash(hash)
+  def initialize(hash={}, &block)
+    @xmlns = XMLNS
+    @xmlns_xsi = XMLNS_XSI
+    @xsi_schema_location = XSI_SCHEMA_LOCATION
+    @pepxml_version = PEPXML_VERSION
+    hash.each do |k,v|
+      send("#{k}=".to_sym, v)
     end
-    if block_given?
-      @msms_run_summary = yield
-    end
+    @msms_run_summary = instance_eval(&block) if block
+  end
+
+  # returns the location based on the pepxml version number
+  def xsi_schema_location
+    XSI_SCHEMA_LOCATION_BASE + pepxml_version.to_s + '.xsd'
   end
 
   # if no date string given, then it will set to Time.now
   def date
-    if @date ; @date 
-    else
-      case Ms::Ident::PepXML.pepxml_version
-      when 18 ;  tarr = Time.now.to_a ; tarr[3..5].reverse.join('-') + "T#{tarr[0..2].reverse.join(':')}"
+    return @date if @date
+    tarr = Time.now.to_a 
+    tarr[3..5].reverse.join('-') + "T#{tarr[0..2].reverse.join(':')}"
+  end
+
+  # uses the filename as summary_xml (if it is nil) attribute and builds a complete, valid xml document,
+  # writing it to the filename
+  def to_xml(filename)
+    summary_xml = File.basename(filename) unless summary_xml
+    builder = Nokogiri::XML::Builder.new do |xml|
+      xml.root do
+        xml.msms_pipeline_analysis(:date => date, :xmlns => xmlns, 'xsi:schemaLocation'.to_sym => xsi_schema_location, :summary_xml => summary_xml) do
+          msms_run_summary.to_xml if msms_run_summary
+        end
       end
     end
   end
-
-  def xmlns
-    if @xmlns ; @xmlns
-    else ; "http://regis-web.systemsbiology.net/pepXML"
-    end
-  end
-
-  def xmlns_xsi
-    if @xmlns_xsi ; @xmlns_xsi
-    else ; "http://www.w3.org/2001/XMLSchema-instance"
-    end
-  end
-
-  def xsi_schema_location
-    if @xsi_schema_location ; @xsi_schema_location 
-    else ; "http://regis-web.systemsbiology.net/pepXML /tools/bin/TPP/tpp/schema/pepXML_v18.xsd"
-    end
-  end
-
-  def to_pepxml
-    case Ms::Ident::PepXML.pepxml_version
-    when 18
-      element_xml_and_att_string(:msms_pipeline_analysis, "date=\"#{date}\" xmlns=\"#{xmlns}\" xmlns:xsi=\"#{xmlns_xsi}\" xsi:schemaLocation=\"#{xsi_schema_location}\" summary_xml=\"#{summary_xml}\"") do
-        @msms_run_summary.to_pepxml
-      end
-    else
-      abort "Don't know how to deal with version: #{Ms::Ident::PepXML.pepxml_version}"
-    end
-  end
-
 end
 
-class Ms::Ident::PepXML::MSMSRunSummary
+class Ms::Ident::Pepxml::MSMSRunSummary
   include SpecID
   include SpecIDXML
 
@@ -127,7 +122,7 @@ class Ms::Ident::PepXML::MSMSRunSummary
   end
 
   def to_pepxml
-    case Ms::Ident::PepXML.pepxml_version
+    case Ms::Ident::Pepxml.pepxml_version
     when 18
       element_xml_and_att_string(:msms_run_summary, "base_name=\"#{base_name}\" msManufacturer=\"#{ms_manufacturer}\" msModel=\"#{ms_model}\" msIonization=\"#{ms_ionization}\" msMassAnalyzer=\"#{ms_mass_analyzer}\" msDetector=\"#{ms_detector}\" raw_data_type=\"#{raw_data_type}\" raw_data=\"#{raw_data}\"") do
         sample_enzyme.to_pepxml +
@@ -138,7 +133,7 @@ class Ms::Ident::PepXML::MSMSRunSummary
   end
 
   def search_hit_class
-    Ms::Ident::PepXML::SearchHit
+    Ms::Ident::Pepxml::SearchHit
   end
 
   def self.from_pepxml_node(node)
@@ -161,7 +156,7 @@ end
 
 
 
-class Ms::Ident::PepXML
+class Ms::Ident::Pepxml
   include SpecIDXML
 
   ## CREATE a default version for the entire class
@@ -256,7 +251,7 @@ class Ms::Ident::PepXML
 Default_Options = {
     :out_path => '.',
     #:backup_db_path => '.',
-    # a PepXML option
+    # a Pepxml option
     :pepxml_version => DEF_VERSION,  
     ## MSMSRunSummary options:
     # string must be recognized in sample_enzyme.rb 
@@ -279,7 +274,7 @@ Default_Options = {
   # will dynamically set :ms_model and :ms_mass_analyzer from srf info
   # (ignoring defaults or anything passed in) for LTQ Orbitrap
   # and LCQ Deca XP
-  # See SRF::Sequest::PepXML::Default_Options hash for defaults
+  # See SRF::Sequest::Pepxml::Default_Options hash for defaults
   # unless given, the out_path will be given as the path of the srf_file
   # srf may be an object or a filename
   def self.new_from_srf(srf, opts={})
@@ -325,13 +320,13 @@ Default_Options = {
 
     ## Create the search summary:
     search_summary_options = {
-      :search_database => Ms::Ident::PepXML::SearchDatabase.new(params),
+      :search_database => Ms::Ident::Pepxml::SearchDatabase.new(params),
       :base_name => full_base_name_no_ext,
       :out_data_type => out_data_type,
       :out_data => out_data
     }
     modifications_string = srf.header.modifications
-    search_summary = Ms::Ident::PepXML::SearchSummary.new( params, modifications_string, search_summary_options)
+    search_summary = Ms::Ident::Pepxml::SearchSummary.new( params, modifications_string, search_summary_options)
 
     # create the sample enzyme from the params object:
     sample_enzyme_obj = 
@@ -343,10 +338,10 @@ Default_Options = {
     opts[:sample_enzyme] = sample_enzyme_obj
 
     ## Create the pepxml obj and top level objects
-    pepxml_obj = Ms::Ident::PepXML.new(ppxml_version, params) 
-    pipeline = Ms::Ident::PepXML::MSMSPipelineAnalysis.new({:date=>nil,:summary_xml=> bn_noext +'.xml'})
+    pepxml_obj = Ms::Ident::Pepxml.new(ppxml_version, params) 
+    pipeline = Ms::Ident::Pepxml::MSMSPipelineAnalysis.new({:date=>nil,:summary_xml=> bn_noext +'.xml'})
     pepxml_obj.msms_pipeline_analysis = pipeline
-    pipeline.msms_run_summary = Ms::Ident::PepXML::MSMSRunSummary.new(opts)
+    pipeline.msms_run_summary = Ms::Ident::Pepxml::MSMSRunSummary.new(opts)
     pipeline.msms_run_summary.search_summary = search_summary
     modifications_obj = search_summary.modifications
 
@@ -401,7 +396,7 @@ Default_Options = {
         :index => files_with_hits_index,
       }
 
-      spectrum_query = Ms::Ident::PepXML::SpectrumQuery.new(sq_hash)
+      spectrum_query = Ms::Ident::Pepxml::SpectrumQuery.new(sq_hash)
 
 
       hits = out_files[dta_i].hits
@@ -462,10 +457,10 @@ Default_Options = {
             '0'
             end
         end
-        search_hits[hit_i] = Ms::Ident::PepXML::SearchHit.new(sh_hash) # there can be multiple hits
+        search_hits[hit_i] = Ms::Ident::Pepxml::SearchHit.new(sh_hash) # there can be multiple hits
       end
 
-      search_result = Ms::Ident::PepXML::SearchResult.new
+      search_result = Ms::Ident::Pepxml::SearchResult.new
       search_result.search_hits = search_hits
       spectrum_query.search_results = [search_result]
       spectrum_queries_arr[files_with_hits_index] = spectrum_query
@@ -519,7 +514,7 @@ Default_Options = {
 
 
     # Takes bioworks 3.2/3.3 xml output (with no filters)
-    # Returns a list of PepXML objects
+    # Returns a list of Pepxml objects
     # params = sequest.params file
     # bioworks = bioworks.xml exported multi-consensus view file
     # pepxml_version = 0 for tpp 1.2.3
@@ -585,16 +580,16 @@ Default_Options = {
     # Hash by the filenames to split into filenames:
     pepxml_objects = bioworks.peps.hash_by(:base_name).map do |base_name, pep_arr|
 
-      search_summary = Ms::Ident::PepXML::SearchSummary.new(params, modifications_string, {:search_database => Ms::Ident::PepXML::SearchDatabase.new(params), :out_data_type => out_data_type, :out_data => out_data})
+      search_summary = Ms::Ident::Pepxml::SearchSummary.new(params, modifications_string, {:search_database => Ms::Ident::Pepxml::SearchDatabase.new(params), :out_data_type => out_data_type, :out_data => out_data})
       modifications_obj = search_summary.modifications
 
-      pepxml_obj = Ms::Ident::PepXML.new(pepxml_version, params)
+      pepxml_obj = Ms::Ident::Pepxml.new(pepxml_version, params)
       full_base_name_no_ext = self.make_base_name( File.expand_path(out_path), base_name)
 
       case pepxml_version
       when 18
-        pipeline =  Ms::Ident::PepXML::MSMSPipelineAnalysis.new({:date=>nil,:summary_xml=>base_name+'.xml'})
-        msms_run_summary = Ms::Ident::PepXML::MSMSRunSummary.new({
+        pipeline =  Ms::Ident::Pepxml::MSMSPipelineAnalysis.new({:date=>nil,:summary_xml=>base_name+'.xml'})
+        msms_run_summary = Ms::Ident::Pepxml::MSMSRunSummary.new({
           :base_name => full_base_name_no_ext,
           :ms_manufacturer => ms_manufacturer,
           :ms_model => ms_model,
@@ -652,9 +647,9 @@ Default_Options = {
 
         case calc_prec_by
         when :prec_mz_arr
-          precursor_neutral_mass = Ms::Ident::PepXML::SpectrumQuery.calc_precursor_neutral_mass(calc_prec_by, top_pep.first_scan.to_i, top_pep.last_scan.to_i, prec_mz_arr, top_pep.charge, pepxml_obj.avg_parent)
+          precursor_neutral_mass = Ms::Ident::Pepxml::SpectrumQuery.calc_precursor_neutral_mass(calc_prec_by, top_pep.first_scan.to_i, top_pep.last_scan.to_i, prec_mz_arr, top_pep.charge, pepxml_obj.avg_parent)
         when :deltamass
-          precursor_neutral_mass = Ms::Ident::PepXML::SpectrumQuery.calc_precursor_neutral_mass(calc_prec_by, top_pep.mass.to_f, top_pep.deltamass.to_f, pepxml_obj.avg_parent)
+          precursor_neutral_mass = Ms::Ident::Pepxml::SpectrumQuery.calc_precursor_neutral_mass(calc_prec_by, top_pep.mass.to_f, top_pep.deltamass.to_f, pepxml_obj.avg_parent)
         end
 
         calc_neutral_pep_mass = (top_pep.mass.to_f - pepxml_obj.h_plus)
@@ -670,7 +665,7 @@ Default_Options = {
         end
         # Create the nested structure of queries{results{hits}}
         # (Ruby's blocks work beautifully for things like this)
-        spec_query = Ms::Ident::PepXML::SpectrumQuery.new({
+        spec_query = Ms::Ident::Pepxml::SpectrumQuery.new({
           :spectrum => [top_pep.base_name, top_pep.first_scan, top_pep.last_scan, top_pep.charge].join("."),
           :start_scan => top_pep.first_scan,
           :end_scan => top_pep.last_scan,
@@ -680,7 +675,7 @@ Default_Options = {
         }) 
 
 
-        search_result = Ms::Ident::PepXML::SearchResult.new 
+        search_result = Ms::Ident::Pepxml::SearchResult.new 
         #puts "set MASSDIFF: "
         #p precursor_neutral_mass - calc_neutral_pep_mass
         ## Calculate some interdependent values;
@@ -688,8 +683,8 @@ Default_Options = {
         # into the search_hit; calc_neutral_pep_mass is simply the avg of
         # precursor masses adjusted to be neutral
         (prevaa, pepseq, nextaa) = SpecID::Pep.prepare_sequence(top_pep.sequence)
-        (num_matched_ions, tot_num_ions) = Ms::Ident::PepXML::SearchHit.split_ions(top_pep.ions)
-        search_hit = Ms::Ident::PepXML::SearchHit.new({
+        (num_matched_ions, tot_num_ions) = Ms::Ident::Pepxml::SearchHit.split_ions(top_pep.ions)
+        search_hit = Ms::Ident::Pepxml::SearchHit.new({
           :hit_rank => 1,
           :peptide => pepseq,
           :peptide_prev_aa => prevaa,
@@ -772,10 +767,10 @@ Default_Options = {
   end
 
 
-end # PepXML
+end # Pepxml
 
 
-class Ms::Ident::PepXML::SearchResult
+class Ms::Ident::Pepxml::SearchResult
   include SpecIDXML
   # an array of search_hits
   attr_accessor :search_hits
@@ -793,7 +788,7 @@ class Ms::Ident::PepXML::SearchResult
 
 end
 
-class Ms::Ident::PepXML::SearchSummary
+class Ms::Ident::Pepxml::SearchSummary
   include SpecIDXML
   attr_accessor :params
   attr_accessor :base_name
@@ -811,7 +806,7 @@ class Ms::Ident::PepXML::SearchSummary
     @search_id = "1"
     if prms
       @params = prms
-      @modifications = Ms::Ident::PepXML::Modifications.new(prms, modifications_string)
+      @modifications = Ms::Ident::Pepxml::Modifications.new(prms, modifications_string)
     end
     if args ; set_from_hash(args) end
   end
@@ -829,7 +824,7 @@ class Ms::Ident::PepXML::SearchSummary
           short_element_xml(:enzymatic_search_constraint, [:enzyme, :max_num_internal_cleavages, :min_number_termini])
         end +
         @modifications.to_pepxml +
-        Ms::Ident::PepXML::Parameters.new(@params).to_pepxml
+        Ms::Ident::Pepxml::Parameters.new(@params).to_pepxml
     end
   end
 
@@ -843,7 +838,7 @@ class Ms::Ident::PepXML::SearchSummary
 
 end
 
-class Ms::Ident::PepXML::Parameters
+class Ms::Ident::Pepxml::Parameters
   include SpecIDXML
 
   attr_accessor :params
@@ -861,7 +856,7 @@ class Ms::Ident::PepXML::Parameters
   end
 end
 
-class Ms::Ident::PepXML::Modifications
+class Ms::Ident::Pepxml::Modifications
   include SpecIDXML
 
   # sequest params object
@@ -952,15 +947,15 @@ class Ms::Ident::PepXML::Modifications
     mod_array = []
     (0...peptide.size).each do |i|
       if hsh.key? peptide[i,2]
-        mod_array << Ms::Ident::PepXML::SearchHit::ModificationInfo::ModAminoacidMass.new([ i+1 , hsh[peptide[i,2]] ])
+        mod_array << Ms::Ident::Pepxml::SearchHit::ModificationInfo::ModAminoacidMass.new([ i+1 , hsh[peptide[i,2]] ])
       end
     end
     if mod_array.size > 0
       hash[:mod_aminoacid_masses] = mod_array
     end
     if hash.size > 1  # if there is more than just the modified peptide there
-      Ms::Ident::PepXML::SearchHit::ModificationInfo.new(hash)
-      #Ms::Ident::PepXML::SearchHit::ModificationInfo.new(hash.values_at(:modified_peptide, :mod_aminoacid_masses, :mod_nterm_mass, :mod_cterm_mass)
+      Ms::Ident::Pepxml::SearchHit::ModificationInfo.new(hash)
+      #Ms::Ident::Pepxml::SearchHit::ModificationInfo.new(hash.values_at(:modified_peptide, :mod_aminoacid_masses, :mod_nterm_mass, :mod_cterm_mass)
     else
       nil
     end
@@ -997,7 +992,7 @@ class Ms::Ident::PepXML::Modifications
         :variable => 'N',
         :binary => 'Y',
       } 
-      Ms::Ident::PepXML::AAModification.new(hash)
+      Ms::Ident::Pepxml::AAModification.new(hash)
     end
 
     ## Create the static_terminal_mods objects
@@ -1019,7 +1014,7 @@ class Ms::Ident::PepXML::Modifications
         :description => mod[0],
       }
       hash[:protein_terminus] = protein_terminus if protein_terminus
-      Ms::Ident::PepXML::TerminalModification.new(hash)
+      Ms::Ident::Pepxml::TerminalModification.new(hash)
     end
     [static_mods, static_terminal_mods]
   end
@@ -1057,7 +1052,7 @@ class Ms::Ident::PepXML::Modifications
           :binary => 'N',
           :symbol => @mod_symbols_hash[[aa.to_sym, mod[1]]],
         }
-        mod_objects << Ms::Ident::PepXML::AAModification.new(hash)
+        mod_objects << Ms::Ident::Pepxml::AAModification.new(hash)
       end
     end
     variable_mods = mod_objects
@@ -1082,7 +1077,7 @@ class Ms::Ident::PepXML::Modifications
         :variable => 'Y',
         :symbol => symb,
       }
-      Ms::Ident::PepXML::TerminalModification.new(hash)
+      Ms::Ident::Pepxml::TerminalModification.new(hash)
     end
 
     #########################
@@ -1109,7 +1104,7 @@ end
 
 # Modified aminoacid, static or variable
 # unless otherwise stated, all attributes can be anything
-class Ms::Ident::PepXML::AAModification
+class Ms::Ident::Pepxml::AAModification
   include SpecIDXML
 
   # The amino acid (one letter code)
@@ -1145,7 +1140,7 @@ class Ms::Ident::PepXML::AAModification
 end
 
 # Modified aminoacid, static or variable
-class Ms::Ident::PepXML::TerminalModification
+class Ms::Ident::Pepxml::TerminalModification
   include SpecIDXML
 
   # n for N-terminus, c for C-terminus
@@ -1175,7 +1170,7 @@ class Ms::Ident::PepXML::TerminalModification
 end
 
 
-class Ms::Ident::PepXML::SearchDatabase
+class Ms::Ident::Pepxml::SearchDatabase
   include SpecIDXML 
   attr_accessor :local_path
   attr_writer :seq_type
@@ -1206,16 +1201,16 @@ class Ms::Ident::PepXML::SearchDatabase
 
 end
 
-Ms::Ident::PepXML::SpectrumQuery = Arrayclass.new(%w(spectrum start_scan end_scan precursor_neutral_mass index assumed_charge search_results pepxml_version))
+Ms::Ident::Pepxml::SpectrumQuery = Arrayclass.new(%w(spectrum start_scan end_scan precursor_neutral_mass index assumed_charge search_results pepxml_version))
 
-class Ms::Ident::PepXML::SpectrumQuery
+class Ms::Ident::Pepxml::SpectrumQuery
   include SpecIDXML
 
   ############################################################
   # FOR PEPXML:
   ############################################################
   def to_pepxml
-    case Ms::Ident::PepXML.pepxml_version
+    case Ms::Ident::Pepxml.pepxml_version
     when 18
       element_xml("spectrum_query", [:spectrum, :start_scan, :end_scan, :precursor_neutral_mass, :assumed_charge, :index]) do
         search_results.collect { |sr| sr.to_pepxml }.join
@@ -1292,11 +1287,11 @@ class Ms::Ident::PepXML::SpectrumQuery
 end
 
 
-Ms::Ident::PepXML::SearchHit = Arrayclass.new( %w( hit_rank peptide peptide_prev_aa peptide_next_aa protein num_tot_proteins num_matched_ions tot_num_ions calc_neutral_pep_mass massdiff num_tol_term num_missed_cleavages is_rejected deltacnstar xcorr deltacn spscore sprank modification_info spectrum_query) )
+Ms::Ident::Pepxml::SearchHit = Arrayclass.new( %w( hit_rank peptide peptide_prev_aa peptide_next_aa protein num_tot_proteins num_matched_ions tot_num_ions calc_neutral_pep_mass massdiff num_tol_term num_missed_cleavages is_rejected deltacnstar xcorr deltacn spscore sprank modification_info spectrum_query) )
 
 # 0=hit_rank 1=peptide 2=peptide_prev_aa 3=peptide_next_aa 4=protein 5=num_tot_proteins 6=num_matched_ions 7=tot_num_ions 8=calc_neutral_pep_mass 9=massdiff 10=num_tol_term 11=num_missed_cleavages 12=is_rejected 13=deltacnstar 14=xcorr 15=deltacn 16=spscore 17=sprank 18=modification_info 19=spectrum_query
 
-class Ms::Ident::PepXML::SearchHit
+class Ms::Ident::Pepxml::SearchHit
   include SpecID::Pep
   include SpecIDXML
 
@@ -1379,10 +1374,10 @@ class Ms::Ident::PepXML::SearchHit
 end
 
 
-Ms::Ident::PepXML::SearchHit::ModificationInfo = Arrayclass.new(%w(modified_peptide mod_aminoacid_masses mod_nterm_mass mod_cterm_mass))
+Ms::Ident::Pepxml::SearchHit::ModificationInfo = Arrayclass.new(%w(modified_peptide mod_aminoacid_masses mod_nterm_mass mod_cterm_mass))
 
 # Positions and masses of modifications
-class Ms::Ident::PepXML::SearchHit::ModificationInfo
+class Ms::Ident::Pepxml::SearchHit::ModificationInfo
   include SpecIDXML
 
   ## Should be something like this:
@@ -1441,7 +1436,7 @@ class Ms::Ident::PepXML::SearchHit::ModificationInfo
     self[3] = node['mod_cterm_mass']
     masses = []
     node.children do |mass_n|
-      masses << Ms::Ident::PepXML::SearchHit::ModificationInfo::ModAminoacidMass.new([mass_n['position'].to_i, mass_n['mass'].to_f])
+      masses << Ms::Ident::Pepxml::SearchHit::ModificationInfo::ModAminoacidMass.new([mass_n['position'].to_i, mass_n['mass'].to_f])
     end
     self[1] = masses
     self 
@@ -1455,4 +1450,4 @@ class Ms::Ident::PepXML::SearchHit::ModificationInfo
   # </modification_info>
 end
 
-Ms::Ident::PepXML::SearchHit::ModificationInfo::ModAminoacidMass = Arrayclass.new(%w(position mass))
+Ms::Ident::Pepxml::SearchHit::ModificationInfo::ModAminoacidMass = Arrayclass.new(%w(position mass))

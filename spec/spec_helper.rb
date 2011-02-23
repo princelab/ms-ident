@@ -15,6 +15,8 @@ end
 
 development = $spec_large ? :development_large : :development
 
+lambda { SEQUEST_DIR = TESTDATA + '/sequest' }.call if $spec_large
+
 begin
   Bundler.setup(:default, development)
 rescue Bundler::BundlerError => e
@@ -29,4 +31,3 @@ $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 
 Bacon.summary_on_exit
 
-SEQUEST_DIR = TESTDATA + '/sequest'
