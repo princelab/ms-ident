@@ -2,6 +2,30 @@ require 'rubygems'
 require 'bundler'
 
 $spec_large = ENV['SPEC_LARGE']
+development = $spec_large ? :development_large : :development
+
+begin
+  Bundler.setup(:default, development)
+rescue Bundler::BundlerError => e
+  $stderr.puts e.message
+  $stderr.puts "Run `bundle install` to install missing gems"
+  exit e.status_code
+end
+require 'spec/more'
+
+
+load_testdata = lambda do 
+  require 'ms/testdata'
+  SEQUEST_DIR = Ms::TESTDATA + '/sequest' 
+end
+
+load_testdata.call if $spec_large
+
+$LOAD_PATH.unshift(File.dirname(__FILE__))
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
+
+Bacon.summary_on_exit
+
 
 def spec_large(&block)
   if $spec_large
@@ -13,21 +37,4 @@ def spec_large(&block)
   end
 end
 
-development = $spec_large ? :development_large : :development
-
-lambda { SEQUEST_DIR = TESTDATA + '/sequest' }.call if $spec_large
-
-begin
-  Bundler.setup(:default, development)
-rescue Bundler::BundlerError => e
-  $stderr.puts e.message
-  $stderr.puts "Run `bundle install` to install missing gems"
-  exit e.status_code
-end
-require 'spec/more'
-
-$LOAD_PATH.unshift(File.dirname(__FILE__))
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-
-Bacon.summary_on_exit
-
+TESTFILES = File.dirname(__FILE__) + '/tfiles'

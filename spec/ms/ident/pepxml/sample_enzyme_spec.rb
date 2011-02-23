@@ -1,10 +1,62 @@
 
 require 'spec_helper'
 require 'ms/ident/pepxml/sample_enzyme'
-require 'set'
+require 'nokogiri'
+
+describe 'creating an Ms::Ident::Pepxml::SampleEnzyme' do
+  before do
+    @hash = {
+      :name => 'trypsin',
+      :cut => 'KR',
+      :no_cut => 'P',
+      :sense => 'C',
+    }
+  end
+  it 'can be set by a known enzyme name' do
+    se = Ms::Ident::Pepxml::SampleEnzyme.new('trypsin')
+    @hash.each do |k,v|
+      se.send(k).is v
+    end
+  end
+
+  it 'can be set manually with a hash' do
+    se = Ms::Ident::Pepxml::SampleEnzyme.new(@hash)
+    @hash.each do |k,v|
+      se.send(k).is v
+    end
+  end
+end
+
+describe 'an Ms::Ident::Pepxml::SampleEnzyme' do
+  before do
+    @sample_enzyme = Ms::Ident::Pepxml::SampleEnzyme.new(:name=>'trypsin',:cut=>'KR',:no_cut=>'P',:sense=>'C')
+  end
+  it 'generates a valid xml fragment' do
+    string = @sample_enzyme.to_xml
+    ok string.is_a?(String)
+    string.matches(/<sample_enzyme name="trypsin"/)
+    string.matches(/<specificity/) 
+    %w(cut="KR" no_cut="P" sense="C").each {|re| string.matches(/#{re}/) }
+    ok !string.include?('version')
+  end
+  it 'adds to an xml builder object' do
+    builder = Nokogiri::XML::Builder.new
+    after = @sample_enzyme.to_xml(builder)
+    ok after.is_a?(Nokogiri::XML::Builder)
+    after.is builder
+    ok after.to_xml.is_a?(String)
+  end
+end
+
+xdescribe 'read in from an xml node' do
+  # placeholder until written
+end
 
 ### DOES this kind of functionality belong in this kind of container????
 ### SHOULD it be with ms-enzyme or ms-in_silico  ???????
+
+=begin
+require 'set'
 
 describe 'Ms::Ident::Pepxml::SampleEnzyme digesting sequences' do
   it 'can digest with no missed cleavages' do
@@ -123,7 +175,7 @@ describe SampleEnzyme, 'making enzyme calculations on sequences and aaseqs' do
   end
 
 end
-
+=end
 
 
 

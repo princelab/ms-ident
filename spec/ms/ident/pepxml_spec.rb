@@ -3,7 +3,7 @@ require 'spec_helper'
 require 'ms/ident/pepxml'
 
 describe "Ms::Ident::Pepxml" do
-  it "fails" do
+  xit "can be created from scratch" do
     should.flunk "need some specs, eh?"
   end
 end
@@ -19,8 +19,9 @@ describe 'an Ms::Ident::Pepxml object from an srf file with modifications' do
     end
 
     it 'exists' do
-      p @pepxml
+      p @pepxmls.first
       string = @pepxmls.first.to_xml
+      p string
       string.matches /</
     end
   end

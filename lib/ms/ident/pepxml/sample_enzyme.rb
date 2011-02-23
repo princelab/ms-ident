@@ -1,15 +1,9 @@
+module Ms ; end
+module Ms::Ident ; end
+class Ms::Ident::Pepxml ; end
 
-module SpecIDXML; end
-
-require 'strscan'
-
-require 'spec_id_xml'
-require 'spec_id'
-
-
-class SampleEnzyme
-  include SpecIDXML
-
+class Ms::Ident::Pepxml::SampleEnzyme
+  # an identifier
   attr_accessor :name
   # amino acids after which to cleave
   attr_accessor :cut
@@ -18,22 +12,18 @@ class SampleEnzyme
   # 'C' or 'N'
   attr_accessor :sense
 
-  # Currently, recognize: 
+  # Currently, recognizes: 
   #   trypsin
-  # For other enzymes, you must set :cut, :no_cut, :name, and :sense
-  # will yield the object if you want to set the values that way
-  def initialize(name=nil)
-    @num_missed_cleavages_regex = nil
-    @sense = nil
-    @cut = nil
-    @no_cut = nil
-    @name = name
-    if @name
-      # set the values if we recognize this name
+  # For other enzymes, you must set :cut, :no_cut, :name, and :sense will
+  # yield in the context of the object if you want to set the values that way
+  def initialize(arg=nil, &block)
+    if arg.is_a?(String)
+      @name = arg
       send("set_#{@name}".to_sym)
-    end
-    if block_given?
-      yield(self)
+    else
+      arg.each do |k,v|
+        send("#{k}=", v)
+      end
     end
   end
 
@@ -43,10 +33,14 @@ class SampleEnzyme
     @no_cut = 'P'
   end
 
-  def to_pepxml
-    element_xml(:sample_enzyme, [:name]) do
-      short_element_xml(:specificity, [:cut, :no_cut, :sense])
+  # if an xml builder object is given, it adds to the object and returns the
+  # builder object, otherwise it returns an xml fragment string
+  def to_xml(builder=nil)
+    xmlb = builder || Nokogiri::XML::Builder.new
+    xmlb.sample_enzyme(:name => name) do |xmlb|
+      xmlb.specificity(:cut => cut, :no_cut => no_cut, :sense => sense)
     end
+    builder || xmlb.doc.root.to_xml
   end
 
   # returns self
@@ -62,6 +56,17 @@ class SampleEnzyme
   def self.from_pepxml_node(node)
     self.new.from_pepxml_node(node)
   end
+end
+
+###################################################
+###################################################
+###################################################
+###################################################
+# This is digestion methodology:
+
+=begin
+
+require 'strscan'
 
   # takes an amino acid sequence (e.g., -.PEPTIDK.L)
   # returns the number of missed cleavages
@@ -158,3 +163,4 @@ class SampleEnzyme
   end
 
 end
+=end
