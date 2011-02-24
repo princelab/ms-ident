@@ -3,6 +3,7 @@ source "http://rubygems.org"
 # Example:
 #   gem "activesupport", ">= 2.3.5"
 gem 'nokogiri'
+gem 'ms-fasta', ">0.4.1"
 
 dev_gems = {
     "spec-more" => ">= 0.0.4",
