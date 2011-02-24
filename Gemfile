@@ -25,5 +25,5 @@ group :development_large do
   dev_gems.each do |name,version_string|
     gem name, version_string
   end
-  gem "ms-testdata", ">= 0"
+  gem "ms-testdata", ">= 0.1.1"
 end
