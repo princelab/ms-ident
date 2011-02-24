@@ -1,3 +1,5 @@
+require 'ms/sequest/srf'
+
 require 'ms/ident/pepxml'
 require 'ms/ident/parameters'
 
