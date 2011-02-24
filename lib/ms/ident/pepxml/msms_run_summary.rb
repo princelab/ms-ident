@@ -1,7 +1,7 @@
 
 module Ms ; end
 module Ms::Ident ; end
-class Ms::Ident::Pepxml; end
+module Ms::Ident::Pepxml; end
 
 class Ms::Ident::Pepxml::MsmsRunSummary
 

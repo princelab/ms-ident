@@ -1,15 +1,15 @@
 require 'ms/ident/pepxml'
+require 'ms/ident/parameters'
 
 module Ms ; end
 module Ms::Ident ; end
-class Ms::Ident::Pepxml ; end
+module Ms::Ident::Pepxml ; end
 
 
 class Ms::Ident::Pepxml::Srf 
   include Ms::Ident::Pepxml
 
   DEFAULT_OPTIONS = {
-    :pepxml_version => DEF_VERSION,  
     ## MSMSRunSummary options:
     # string must be recognized in sample_enzyme.rb 
     # or create your own SampleEnzyme object
@@ -250,29 +250,7 @@ class Ms::Ident::Pepxml::Srf
     file.gsub!("\\", '/')
     File.basename(file).sub(/\.[\w^\.]+$/, '')
   end
-
-
 end # Pepxml
-
- 
-class Ms::Ident::Pepxml::Parameters
-  include SpecIDXML
-
-  attr_accessor :params
-
-  def initialize(obj=nil)
-    @params = obj
-  end
-  #  (used to be called pepxml_parameters)
-  # Returns xml in the form <parameter name="#{method_name}"
-  # value="#{method_value}"/> for list of symbols
-  def to_pepxml
-    keys_as_symbols = @params.opts.sort.map do |k,v| k.to_s end
-    params_xml(@params, *keys_as_symbols)
-    # (:peptide_mass_tol, :peptide_mass_units, :fragment_ion_tol, :ion_series, :max_num_differential_AA_per_mod, :nucleotide_reading_frame, :num_output_lines, :remove_precursor_peak, :ion_cutoff_percentage, :match_peak_count, :match_peak_allowed_error, :match_peak_tolerance, :protein_mass_filter, :sequence_header_filter)
-  end
-end
-
 class Ms::Ident::Pepxml::Modifications
   include SpecIDXML
 

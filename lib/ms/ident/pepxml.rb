@@ -1,4 +1,5 @@
 require 'nokogiri'
+require 'ms/ident'
 require 'ms/ident/pepxml/msms_pipeline_analysis'
 
 module Ms ; module Ident ; end ; end
@@ -38,6 +39,7 @@ module Ms::Ident::Pepxml
   # accepts any legit search results format (right now only accepts srf files)
   def self.set_from_search_results(file)
     filetype = Ms::Ident.filetype(file)
+    require "ms/ident/pepxml/#{filetype}"
     Ms::Ident::Pepxml.const_get(filetype.capitalize).new(file)
   end
 
@@ -66,3 +68,4 @@ end
 class Ms::Ident::Pepxml::Generic
   include Ms::Ident::Pepxml
 end
+
