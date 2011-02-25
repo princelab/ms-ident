@@ -1,8 +1,10 @@
 require 'merge'
 
+require 'ms/ident/pepxml/msms_run_summary'
+
 module Ms ; end
 module Ms::Ident ; end
-module Ms::Ident::Pepxml; end
+class Ms::Ident::Pepxml; end
 
 class Ms::Ident::Pepxml::MsmsPipelineAnalysis
   include Merge
@@ -37,7 +39,7 @@ class Ms::Ident::Pepxml::MsmsPipelineAnalysis
   def initialize(hash={}, &block)
     @xmlns = XMLNS
     @xmlns_xsi = XMLNS_XSI
-    @xsi_schema_location = XSI_SCHEMA_LOCATION
+    @xsi_schema_location = xsi_schema_location
     @pepxml_version = PEPXML_VERSION
     merge!(hash, &block)
   end
@@ -56,15 +58,12 @@ class Ms::Ident::Pepxml::MsmsPipelineAnalysis
 
   # uses the filename as summary_xml (if it is nil) attribute and builds a complete, valid xml document,
   # writing it to the filename
-  def to_xml(filename)
-    summary_xml = File.basename(filename) unless summary_xml
-    builder = Nokogiri::XML::Builder.new do |xml|
-      xml.root do
-        xml.msms_pipeline_analysis(:date => date, :xmlns => xmlns, 'xsi:schemaLocation'.to_sym => xsi_schema_location, :summary_xml => summary_xml) do
-          msms_run_summary.to_xml if msms_run_summary
-        end
-      end
+  def to_xml(builder)
+    xmlb = builder || Nokogiri::XML::Builder.new
+    xmlb.msms_pipeline_analysis(:date => date, :xmlns => xmlns, 'xsi:schemaLocation'.to_sym => xsi_schema_location, :summary_xml => summary_xml) do |xmlb|
+      msms_run_summary.to_xml(xmlb) if msms_run_summary
     end
+    builder || xmlb.doc.root.to_xml
   end
 end
 

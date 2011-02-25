@@ -17,7 +17,7 @@ end
 
 class Ms::Ident::Pepxml
   XML_STYLESHEET_LOCATION = '/tools/bin/TPP/tpp/schema/pepXML_std.xsl'
-  DEFAULT_PEPXML_VERSION = Msms_Pipeline_Analysis::PEPXML_VERSION
+  DEFAULT_PEPXML_VERSION = MsmsPipelineAnalysis::PEPXML_VERSION
 
   attr_accessor :msms_pipeline_analysis
 
@@ -32,7 +32,7 @@ class Ms::Ident::Pepxml
 
   # yields a new Msms_Pipeline_Analysis object if given a block 
   def initialize(&block)
-    block.call(Msms_Pipeline_Analysis.new) if block
+    block.call(@msms_pipeline_analysis=MsmsPipelineAnalysis.new) if block
   end
 
   # takes an xml document object and sets it with the xml stylesheet
@@ -51,9 +51,9 @@ class Ms::Ident::Pepxml
   # have already been set and is not influenced by the outfile given here.
   def to_xml(outfile=nil)
     builder = Nokogiri::XML::Builder.new
-    add_stylesheet(builder.doc, Ms::Ident::Pepxml::XML_STYLESHEET_LOCATION)
     msms_pipeline_analysis.to_xml(builder)
-    string = builder.to_xml
+    add_stylesheet(builder.doc, Ms::Ident::Pepxml::XML_STYLESHEET_LOCATION)
+    string = builder.doc.to_xml
     outfile ? File.open(outfile,'w') {|out| out.print(string) } : string
   end
 end

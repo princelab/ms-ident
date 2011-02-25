@@ -1,11 +1,15 @@
 require 'merge'
 require 'nokogiri'
 
+require 'ms/ident/pepxml/sample_enzyme'
+require 'ms/ident/pepxml/search_summary'
+
 module Ms ; end
 module Ms::Ident ; end
-module Ms::Ident::Pepxml; end
+class Ms::Ident::Pepxml; end
 
 class Ms::Ident::Pepxml::MsmsRunSummary
+  include Merge
   # The name of the pep xml file without any extension
   attr_accessor :base_name
   # The name of the mass spec manufacturer 
@@ -42,12 +46,14 @@ class Ms::Ident::Pepxml::MsmsRunSummary
 
   # optionally takes an xml builder object and returns the builder, or the xml
   # string if no builder was given
-  def to_xml(builder)
+  def to_xml(builder=nil)
     xmlb = builder || Nokogiri::XML::Builder.new
-    xml.msms_run_summary(:base_name => base_name, :msManufacturer => ms_manufacturer, :msModel => ms_model, :msIonization => ms_ionization, :msMassAnalyzer => ms_mass_analyzer, :msDetector => ms_detector, :raw_data_type => raw_data_type, :raw_data => raw_data) do
-      xml.sample_enzyme.to_xml(xml) if sample_enzyme
-      search_summary.to_xml(xml) if search_summary
-      spectrum_queries.each {|sq| sq.to_xml(xml)} if spectrum_queries
+    hash = {:base_name => base_name, :msManufacturer => ms_manufacturer, :msModel => ms_model, :msIonization => ms_ionization, :msMassAnalyzer => ms_mass_analyzer, :msDetector => ms_detector, :raw_data_type => raw_data_type, :raw_data => raw_data}
+    hash.each {|k,v| hash.delete(k) unless v }
+    xmlb.msms_run_summary(hash) do |xmlb|
+      sample_enzyme.to_xml(xmlb) if sample_enzyme
+      search_summary.to_xml(xmlb) if search_summary
+      spectrum_queries.each {|sq| sq.to_xml(xmlb)} if spectrum_queries
     end
     builder || xmlb.doc.root.to_xml
   end

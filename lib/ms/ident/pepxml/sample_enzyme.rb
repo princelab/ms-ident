@@ -4,6 +4,7 @@ module Ms::Ident ; end
 class Ms::Ident::Pepxml ; end
 
 class Ms::Ident::Pepxml::SampleEnzyme
+  include Merge
   # an identifier
   attr_accessor :name
   # amino acids after which to cleave
@@ -17,7 +18,7 @@ class Ms::Ident::Pepxml::SampleEnzyme
   # set_<name> method), or 
   #   trypsin
   # For other enzymes, you must set :cut, :no_cut, :name, and :sense will
-  def initialize(arg=nil)
+  def initialize(arg={})
     if arg.is_a?(String)
       @name = arg
       send("set_#{@name}".to_sym)

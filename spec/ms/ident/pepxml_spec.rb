@@ -1,10 +1,13 @@
 require 'spec_helper'
 
+require 'ms/mass'
+require 'ms/mass/aa'
 require 'ms/ident/pepxml'
+require 'ms/ident/pepxml/modifications'
 
 describe "creating an Ms::Ident::Pepxml" do
   it "can be creating in a nested fashion reflecting internal structure" do
-    Ms::Ident::Pepxml.new do |msms_pipeline_analysis|
+    pepxml = Ms::Ident::Pepxml.new do |msms_pipeline_analysis|
       msms_pipeline_analysis.merge!(:summary_xml => "020.xml") do |msms_run_summary|
         # prep the sample enzyme and search_summary
         msms_run_summary.merge!(
@@ -22,25 +25,24 @@ describe "creating an Ms::Ident::Pepxml" do
             :precursor_mass_type =>'monoisotopic',
             :fragment_mass_type => 'average'
           ) do |search_database, enzymatic_search_constraint, modifications, parameters|
-            search_database.merge!(:local_path => '/path/to/db.fasta', :type => 'AA')
+            search_database.merge!(:local_path => '/path/to/db.fasta', :seq_type => 'AA') # note seq_type == type
             enzymatic_search_constraint.merge!(
               :enzyme => 'Trypsin', 
               :max_num_internal_cleavages => 2,
               :min_number_termini => 2
             )
-            modifications << Ms::Ident::Pepxml::AminoAcidModification.new(
-              :aminoacid => 'M', :massdiff => 15.9994, :mass => Ms::Mass::MONO['M']+15.9994,
+            modifications << Ms::Ident::Pepxml::AminoacidModification.new(
+              :aminoacid => 'M', :massdiff => 15.9994, :mass => Ms::Mass::AA::MONO['M']+15.9994,
               :variable => 'Y', :symbol => '*')
-            modifications << Ms::Ident::Pepxml::TerminalModification.new(
               # invented, for example, a protein terminating mod
-              :terminus => 'c', :massdiff => 23.3333, :mass => Ms::Mass::MONO['oh'] + 23.3333, :variable => 'Y', :symbol = ']', :protein_terminus => 'c', :description => 'leave protein_terminus off if not protein mod'
+            modifications << Ms::Ident::Pepxml::TerminalModification.new( 
+              :terminus => 'c', :massdiff => 23.3333, :mass => Ms::Mass::MONO['oh'] + 23.3333, :variable => 'Y', :symbol => ']', :protein_terminus => 'c', :description => 'leave protein_terminus off if not protein mod'
             )
           end
-
-
         end
       end
     end
+    pepxml.to_xml.matches /<msms_pipeline_analysis /
   end
 end
 
