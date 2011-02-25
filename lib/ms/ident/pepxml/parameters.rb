@@ -1,6 +1,6 @@
 module Ms
   module Ident
-    module Pepxml
+    class Pepxml
 
       class Parameters < Hash
         def to_xml(builder)

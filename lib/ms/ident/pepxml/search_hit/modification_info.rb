@@ -3,7 +3,7 @@ require 'nokogiri'
 
 module Ms ; end
 module Ms::Ident ; end
-module Ms::Ident::Pepxml ; end
+class Ms::Ident::Pepxml ; end
 
 class Ms::Ident::Pepxml::SearchHit
   # Positions and masses of modifications

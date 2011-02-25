@@ -1,6 +1,6 @@
 module Ms ; end
 module Ms::Ident ; end
-module Ms::Ident::Pepxml ; end
+class Ms::Ident::Pepxml ; end
 
 
 Ms::Ident::Pepxml::SpectrumQuery = Arrayclass.new(%w(spectrum start_scan end_scan precursor_neutral_mass index assumed_charge search_results pepxml_version))

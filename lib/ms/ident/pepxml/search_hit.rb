@@ -4,7 +4,7 @@ module Ms ; end
 module Ms::Ident ; end
 
 
-module Ms::Ident::Pepxml 
+class Ms::Ident::Pepxml 
 
   Ms::Ident::Pepxml::SearchHit = Struct.new(:hit_rank, :peptide, :peptide_prev_aa, :peptide_next_aa, :protein, :num_tot_proteins, :num_matched_ions, :tot_num_ions, :calc_neutral_pep_mass, :massdiff, :num_tol_term, :num_missed_cleavages, :is_rejected, :modification_info, :search_scores, :spectrum_query) do
 

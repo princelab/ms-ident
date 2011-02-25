@@ -3,7 +3,7 @@ require 'ms/ident/pepxml/search_hit/modification_info'
 
 module Ms ; end
 module Ms::Ident ; end
-module Ms::Ident::Pepxml ; end
+class Ms::Ident::Pepxml ; end
 
 module Ms::Ident::Pepxml::Modifications 
   # Handles modifications for sequest style searches
