@@ -8,25 +8,6 @@ describe "Ms::Ident::Pepxml" do
   end
 end
 
-describe 'an Ms::Ident::Pepxml object from an srf file with modifications' do
-  spec_large do
-
-    @srf_files = %w(020 040).map {|f| SEQUEST_DIR + '/opd1_2runs_2mods/sequest331/' + f + '.srf' }
-    @out_path = TESTFILES + '/tmp'
-    FileUtils.mkdir @out_path unless File.exist?(@out_path)
-    @pepxmls = @srf_files.each do |srf_file|
-      Ms::Ident::Pepxml.new(srf_file)
-    end
-
-    it 'exists' do
-      p @pepxmls.first
-      string = @pepxmls.first.to_xml
-      p string
-      string.matches /</
-    end
-  end
-end
-
 =begin
     # splits string on ' 'and matches the line found by find_line_regexp in
     # lines
