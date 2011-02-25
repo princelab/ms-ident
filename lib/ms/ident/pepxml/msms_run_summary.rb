@@ -1,10 +1,11 @@
+require 'merge'
+require 'nokogiri'
 
 module Ms ; end
 module Ms::Ident ; end
 module Ms::Ident::Pepxml; end
 
 class Ms::Ident::Pepxml::MsmsRunSummary
-
   # The name of the pep xml file without any extension
   attr_accessor :base_name
   # The name of the mass spec manufacturer 
@@ -24,24 +25,31 @@ class Ms::Ident::Pepxml::MsmsRunSummary
   # An array of spectrum_queries
   attr_accessor :spectrum_queries
 
-  # takes a hash of name, value pairs
-  # if block given, spectrum_queries (should be array of spectrum queries) is
-  # set to the return value of the block
-  def initialize(hash={}, &block)
-    hash.each do |k,v|
-      self.send("#{k}=", v)
-    end
-    @spectrum_queries = []
-    @spectrum_queries = block.call if block
+  def block_arg
+    [@sample_enzyme = Ms::Ident::Pepxml::SampleEnzyme.new,    
+      @search_summary = Ms::Ident::Pepxml::SearchSummary.new,
+      @spectrum_queries ]
   end
 
-  # takes an xml builder object
-  def to_xml(xml)
+  # takes a hash of name, value pairs
+  # if block given, yields a SampleEnzyme object, a SearchSummary and an array
+  # for SpectrumQueries
+  def initialize(hash={}, &block)
+    @spectrum_queries = []
+    merge!(hash, &block)
+    block.call() if block
+  end
+
+  # optionally takes an xml builder object and returns the builder, or the xml
+  # string if no builder was given
+  def to_xml(builder)
+    xmlb = builder || Nokogiri::XML::Builder.new
     xml.msms_run_summary(:base_name => base_name, :msManufacturer => ms_manufacturer, :msModel => ms_model, :msIonization => ms_ionization, :msMassAnalyzer => ms_mass_analyzer, :msDetector => ms_detector, :raw_data_type => raw_data_type, :raw_data => raw_data) do
       xml.sample_enzyme.to_xml(xml) if sample_enzyme
       search_summary.to_xml(xml) if search_summary
       spectrum_queries.each {|sq| sq.to_xml(xml)} if spectrum_queries
     end
+    builder || xmlb.doc.root.to_xml
   end
 
   def self.from_pepxml_node(node)

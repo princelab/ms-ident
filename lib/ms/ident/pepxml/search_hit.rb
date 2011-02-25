@@ -17,8 +17,14 @@ class Ms::Ident::Pepxml
 
       # deltacnstar: 1 if there is no second ranked hit, 0 otherwise
       def initialize(hash={})
-        super(*hash.values_at(:hit_rank, :peptide, :peptide_prev_aa, :peptide_next_aa, :protein, :num_tot_proteins, :num_matched_ions, :tot_num_ions, :calc_neutral_pep_mass, :massdiff, :num_tol_term, :num_missed_cleavages, :is_rejected, :modification_info, :search_scores, :spectrum_query))
+        super(*hash.values_at(*self.members)
       end
+
+    def merge!(hash)
+      self.members.each_with_index do |sym,i| 
+        self[i] = hash[sym]
+      end
+    end
 
     def to_xml(builder=nil)
       xmlb = builder || Nokogiri::XML::Builder.new

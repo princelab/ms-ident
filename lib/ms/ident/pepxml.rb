@@ -30,10 +30,9 @@ class Ms::Ident::Pepxml
     msms_pipeline_analysis.msms_run_summary.spectrum_queries
   end
 
-  # returns a subclass based on the search_file given, or a Generic Pepxml
+  # yields a new Msms_Pipeline_Analysis object if given a block 
   def initialize(&block)
-    obj.msms_pipeline_analysis = block.call if block
-    obj
+    block.call(Msms_Pipeline_Analysis.new) if block
   end
 
   # takes an xml document object and sets it with the xml stylesheet
@@ -54,7 +53,8 @@ class Ms::Ident::Pepxml
     builder = Nokogiri::XML::Builder.new
     add_stylesheet(builder.doc, Ms::Ident::Pepxml::XML_STYLESHEET_LOCATION)
     msms_pipeline_analysis.to_xml(builder)
-    File.open(outfile,'w') {|out| out.print(builder.to_xml) }
+    string = builder.to_xml
+    outfile ? File.open(outfile,'w') {|out| out.print(string) } : string
   end
 end
 

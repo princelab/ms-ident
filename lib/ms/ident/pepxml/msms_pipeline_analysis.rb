@@ -1,8 +1,11 @@
+require 'merge'
+
 module Ms ; end
 module Ms::Ident ; end
 module Ms::Ident::Pepxml; end
 
 class Ms::Ident::Pepxml::MsmsPipelineAnalysis
+  include Merge
   XMLNS = "http://regis-web.systemsbiology.net/pepXML"
   XMLNS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
   # (this doesn't actually exist), also, the space is supposed to be there
@@ -26,16 +29,17 @@ class Ms::Ident::Pepxml::MsmsPipelineAnalysis
   attr_accessor :msms_run_summary
   attr_writer :date
 
-  # if block given, sets msms_run_summary to return value of block
+  def block_arg 
+    @msms_run_summary = Ms::Ident::Pepxml::MsmsRunSummary.new
+  end
+
+  # if block given, yields a new msms_run_summary to return value of block
   def initialize(hash={}, &block)
     @xmlns = XMLNS
     @xmlns_xsi = XMLNS_XSI
     @xsi_schema_location = XSI_SCHEMA_LOCATION
     @pepxml_version = PEPXML_VERSION
-    hash.each do |k,v|
-      send("#{k}=".to_sym, v)
-    end
-    @msms_run_summary = block.call if block
+    merge!(hash, &block)
   end
 
   # returns the location based on the pepxml version number

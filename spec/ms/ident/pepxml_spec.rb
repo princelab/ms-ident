@@ -2,9 +2,45 @@ require 'spec_helper'
 
 require 'ms/ident/pepxml'
 
-describe "Ms::Ident::Pepxml" do
-  xit "can be created from scratch" do
-    should.flunk "need some specs, eh?"
+describe "creating an Ms::Ident::Pepxml" do
+  it "can be creating in a nested fashion reflecting internal structure" do
+    Ms::Ident::Pepxml.new do |msms_pipeline_analysis|
+      msms_pipeline_analysis.merge!(:summary_xml => "020.xml") do |msms_run_summary|
+        # prep the sample enzyme and search_summary
+        msms_run_summary.merge!(
+          :base_name => '/home/jtprince/dev/mspire/020', 
+          :ms_manufacturer => 'Thermo', 
+          :ms_model => 'LTQ Orbitrap', 
+          :ms_ionization => 'ESI', 
+          :ms_mass_analyzer => 'Ion Trap', 
+          :ms_detector => 'UNKNOWN'
+        ) do |sample_enzyme, search_summary, spectrum_queries|
+          sample_enzyme.merge!(:name=>'Trypsin',:cut=>'KR',:no_cut=>'P',:sense=>'C')
+          search_summary.merge!(
+            :base_name=>'/path/to/file/020',
+            :search_engine => 'SEQUEST',
+            :precursor_mass_type =>'monoisotopic',
+            :fragment_mass_type => 'average'
+          ) do |search_database, enzymatic_search_constraint, modifications, parameters|
+            search_database.merge!(:local_path => '/path/to/db.fasta', :type => 'AA')
+            enzymatic_search_constraint.merge!(
+              :enzyme => 'Trypsin', 
+              :max_num_internal_cleavages => 2,
+              :min_number_termini => 2
+            )
+            modifications << Ms::Ident::Pepxml::AminoAcidModification.new(
+              :aminoacid => 'M', :massdiff => 15.9994, :mass => Ms::Mass::MONO['M']+15.9994,
+              :variable => 'Y', :symbol => '*')
+            modifications << Ms::Ident::Pepxml::TerminalModification.new(
+              # invented, for example, a protein terminating mod
+              :terminus => 'c', :massdiff => 23.3333, :mass => Ms::Mass::MONO['oh'] + 23.3333, :variable => 'Y', :symbol = ']', :protein_terminus => 'c', :description => 'leave protein_terminus off if not protein mod'
+            )
+          end
+
+
+        end
+      end
+    end
   end
 end
 

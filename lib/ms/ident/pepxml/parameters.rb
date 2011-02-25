@@ -1,7 +1,6 @@
 module Ms
   module Ident
     class Pepxml
-
       class Parameters < Hash
         def to_xml(builder)
           self.each do |k,v|
@@ -9,7 +8,6 @@ module Ms
           end
         end
       end
-
     end
   end
 end

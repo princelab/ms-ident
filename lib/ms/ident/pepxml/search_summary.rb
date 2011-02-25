@@ -1,4 +1,5 @@
 require 'nokogiri'
+require 'merge'
 
 module Ms ; end
 module Ms::Ident ; end
@@ -7,51 +8,51 @@ class Ms::Ident::Pepxml ; end
 class Ms::Ident::Pepxml::SearchSummary
   DEFAULT_SEARCH_ID = '1'
 
-  attr_accessor :search_params  # renamed from params
   attr_accessor :base_name
+  # required in v18-19, optional in later versions
   attr_accessor :out_data_type
+  # required in v18-19, optional in later versions
   attr_accessor :out_data
   # by default, "1"
   attr_accessor :search_id
+  # a Modifications object
   attr_accessor :modifications
   # A SearchDatabase object (responds to :local_path and :type)
   attr_accessor :search_database
-  # if given a sequest params object, then will set the following attributes:
-  # args is a hash of parameters
-  # modifications_string -> See Modifications
+  # the other search paramaters as a hash
+  attr_accessor :parameters
 
-  # should respond to :enzyme, :max_num_internal_cleavages,
-  # :min_number_termini.  Can be nil for a no enzyme search
+  # An EnzymaticSearchConstraint object (at the moment this is merely a hash
+  # with a few required keys
   attr_accessor :enzymatic_search_constraint
 
-  # IMPORTANT:
-  #####     @modifications = Ms::Ident::Pepxml::Modifications.new(search_params, modifications_string)
-
-  def initialize(search_params=nil, modifications_object, other={})
-    @search_id = DEFAULT_SEARCH_ID
-    if search_params
-      @search_params = search_params
-    end
-    other.each {|k,v| send("#{k}=", v) }
+  def block_arg
+    [@search_database = Ms::Ident::Pepxml::SearchDatabase.new,
+      @enzymatic_search_constraint = Ms::Ident::Pepxml::EnzymaticSearchConstraint.new
+      @modifications = Ms::Ident::Pepxml::Modifications.new,
+      @parameters = Ms::Ident::Pepxml::Parameters.new,
+    ]
   end
 
-  def method_missing(symbol, *args)
-    if @search_params ; @search_params.send(symbol, *args) end
+  def initialize(hash={}, &block)
+    @search_id = DEFAULT_SEARCH_ID
+    merge!(hash, &block)
   end
 
   def to_xml(builder=nil)
+    # TODO: out_data and out_data_type are optional in later pepxml versions...
+    # should work that in...
     attrs = [:base_name, :search_engine, :precursor_mass_type, :fragment_mass_type, :out_data_type, :out_data, :search_id]
     hash = Hash[ attrs.map {|at| [at, self.send(at)] } ]
     xmlb = builder || Nokogiri::XML::Builder.new
     builder.search_summary(hash) do |xmlb|
       search_database.to_xml(xmlb)
       if enzymatic_search_constraint
-        esc = enzymatic_search_constraint
-        xmlb.enzymatic_search_constraint(:enzyme => esc.enzyme, :max_num_internal_cleavages => esc.max_num_internal_cleavages, :min_number_termini => esc.min_number_termini)
+        xmlb.enzymatic_search_constraint(enzymatic_search_constraint)
       modifications_object.to_xml(xmlb)
-      Ms::Ident::Pepxml::Parameters.new(@search_params).to_xml(xmlb)
+      parameters.to_xml(xmlb)
     end
-    builder || xmlb.to_xml 
+    builder || xmlb.doc.root.to_xml 
   end
 
   def self.from_pepxml_node(node)
@@ -59,8 +60,17 @@ class Ms::Ident::Pepxml::SearchSummary
   end
 
   def from_pepxml_node(node)
-    raise NotImplementedError, "right now we just have the xml node at your disposal"
+    raise NotImplementedError, "not implemented just yet (just use the raw xml node)"
   end
 
+  # requires these keys:  
+  #
+  #    :enzyme => a valid enzyme name
+  #    :max_num_internal_cleavages => max number of internal cleavages allowed
+  #    :min_number_termini => minimum number of termini??
+  class EnzymaticSearchConstraint < Hash
+  end
 end
+
+
 

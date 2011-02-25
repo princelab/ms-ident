@@ -1,27 +1,18 @@
+require 'merge'
 require 'nokogiri'
 
 module Ms ; end
 module Ms::Ident ; end
 class Ms::Ident::Pepxml ; end
 
-module Ms::Ident::Pepxml::Modifications
-
-  # array holding AminoacidModification  objects
-  attr_accessor :aminoacid_modifications
-  # array holding TerminalModifications
-  attr_accessor :terminal_modifications
-
-  def modifications
-    aminoacid_modifications + terminal_modifications
-  end
-
+# holds a list of AminoacidModification and TerminalModification objects.
+class Ms::Ident::Pepxml::Modifications < Array
   ## Generates the pepxml for static and differential amino acid mods based on
   ## sequest object
   def to_xml(builder=nil)
     xmlb = builder || Nokogiri::XML::Builder.new
-    aminoacid_modifications.each {|aa_mod| aa_mod.to_xml(xmlb)}
-    terminal_modifications.each {|term_mod| term_mod.to_xml(xmlb) }
-    builder || xmlb.to_xml
+    modifications.each {|mod| mod.to_xml(xmlb) }
+    builder || xmlb.doc.root.to_xml
   end
 end
 
@@ -47,7 +38,7 @@ class Ms::Ident::Pepxml::AminoacidModification
   attr_accessor :binary
 
   def initialize(hash={})
-    hash.each {|k,v| send("#{k}=",v) }
+    merge!(hash)
   end
 
   # returns the builder or an xml string if no builder supplied
@@ -59,7 +50,7 @@ class Ms::Ident::Pepxml::AminoacidModification
     attrs = Hash[ [:aminoacid, :massdiff, :mass, :variable, :peptide_terminus, :symbol, :binary].map {|at| [at, send(at)] } ]
     attrs[:massdiff] = attrs[:massdiff].to_plus_minus_string
     xmlb.aminoacid_modification(attrs)
-    builder || xmlb.to_xml
+    builder || xmlb.doc.root.to_xml
   end
 end
 
@@ -81,8 +72,8 @@ class Ms::Ident::Pepxml::TerminalModification
   attr_accessor :protein_terminus
   attr_accessor :description
 
-  def initialize(hash=nil)
-    instance_var_set_from_hash(hash) if hash # can use unless there are weird methods
+  def initialize(hash={})
+    hash.each {|k,v| send("#{k}=", v) }
   end
 
   # returns the builder or an xml string if no builder supplied
@@ -92,7 +83,7 @@ class Ms::Ident::Pepxml::TerminalModification
     attrs = Hash[ [:terminus, :massdiff, :mass, :variable, :protein_terminus, :description].map {|at| [at, send(at)] } ]
     attrs[:massdiff] = attrs[:massdiff].to_plus_minus_string
     xmlb.terminal_modification(attrs)
-    builder || xmlb.to_xml
+    builder || xmlb.doc.root.to_xml
   end
 end
 

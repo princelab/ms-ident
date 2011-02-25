@@ -1,3 +1,4 @@
+require 'merge'
 module Ms ; end
 module Ms::Ident ; end
 class Ms::Ident::Pepxml ; end
@@ -12,18 +13,16 @@ class Ms::Ident::Pepxml::SampleEnzyme
   # 'C' or 'N'
   attr_accessor :sense
 
-  # Currently, recognizes: 
+  # Can pass in a name of an enzyme that is recognized (meaning there is a
+  # set_<name> method), or 
   #   trypsin
   # For other enzymes, you must set :cut, :no_cut, :name, and :sense will
-  # yield in the context of the object if you want to set the values that way
-  def initialize(arg=nil, &block)
+  def initialize(arg=nil)
     if arg.is_a?(String)
       @name = arg
       send("set_#{@name}".to_sym)
     else
-      arg.each do |k,v|
-        send("#{k}=", v)
-      end
+      merge!(arg)
     end
   end
 

@@ -1,24 +1,39 @@
+require 'nokogiri'
+require 'ms/mass'
+
 module Ms ; end
 module Ms::Ident ; end
 class Ms::Ident::Pepxml ; end
 
+# search_specification is a search constraint applied specifically to this query (a String)
+Ms::Ident::Pepxml::SpectrumQuery = Struct.new(:spectrum, :start_scan, :end_scan, :precursor_neutral_mass, :index, :assumed_charge, :retention_time_sec, :search_specification, :search_results, :pepxml_version) do
 
-Ms::Ident::Pepxml::SpectrumQuery = Arrayclass.new(%w(spectrum start_scan end_scan precursor_neutral_mass index assumed_charge search_results pepxml_version))
+  Required = Set.new([:spectrum, :start_scan, :end_scan, :precursor_neutral_mass, :index, :assumed_charge])
+  Optional = [:retention_time_sec, :search_specification]
 
-class Ms::Ident::Pepxml::SpectrumQuery
+  # yeilds the empty search_results array if given a block
+  def initialize(*args, &block)
+    search_results = []
+    super(*args)
+    block.call(search_results) if block
+  end
 
   ############################################################
   # FOR PEPXML:
   ############################################################
-  def to_pepxml
-    # consider retention_time_sec(??) in v19 and above....!!!!
-    case Ms::Ident::Pepxml.pepxml_version
+  def to_xml(builder=nil)
+    xmlb = builder || Nokogiri::XML::Builder.new
+    # all through search_specification
+    attrs = members[0, 8].map {|at| v=send(at) ; [at, v] if v }
+    attrs_hash = Hash[attrs]
+    case pepxml_version
     when 18
-      
-      element_xml("spectrum_query", [:spectrum, :start_scan, :end_scan, :precursor_neutral_mass, :assumed_charge, :index]) do
-        search_results.collect { |sr| sr.to_pepxml }.join
-      end
+      attrs_hash.delete(:retention_time_sec)
     end
+    xmlb.spectrum_query(attrs_hash) do |xmlb|
+      search_results.to_xml(xmlb) 
+    end
+    builder || xmlb.doc.root.to_xml
   end
 
   def self.from_pepxml_node(node)
@@ -35,58 +50,9 @@ class Ms::Ident::Pepxml::SpectrumQuery
     self
   end
 
-  # Returns the precursor_neutral based on the scans and an array indexed by
-  # scan numbers.  first and last scan and charge should be integers.
-  # This is the precursor_mz - h_plus!
-  # by=:prec_mz_arr|:deltamass
-  # if prec_mz_arr then the following arguments must be supplied:
-  # :first_scan = int, :last_scan = int, :prec_mz_arr = array with the precursor
-  # m/z for each product scan, :charge = int
-  # if deltamass then the following arguments must be supplied:
-  # m_plus_h = float, deltamass = float
-  # For both flavors, a final additional argument 'average_weights'
-  # can be used.  If true (default), average weights will be used, if false, 
-  # monoisotopic weights (currently this is simply the mass of the proton)
-  def self.calc_precursor_neutral_mass(by, *args)
-    average_weights = true
-    case by
-    when :prec_mz_arr
-      (first_scan, last_scan, prec_mz_arr, charge, average_weights) = args
-    when :deltamass
-      (m_plus_h, deltamass, average_weights) = args
-    end
-
-    if average_weights 
-      mass_h_plus = SpecID::AVG[:h_plus] 
-    else
-      mass_h_plus = SpecID::MONO[:h_plus] 
-    end
-
-    case by
-    when :prec_mz_arr
-      mz = nil
-      if first_scan != last_scan
-        sum = 0.0
-        tot_num = 0
-        (first_scan..last_scan).each do |scan|
-          val = prec_mz_arr[scan]
-          if val  # if the scan is not an mslevel 2
-            sum += val
-            tot_num += 1
-          end
-        end
-        mz = sum/tot_num
-      else
-        mz = prec_mz_arr[first_scan]
-      end
-      charge * (mz - mass_h_plus)
-    when :deltamass
-      m_plus_h - mass_h_plus + deltamass
-    else
-      abort "don't recognize 'by' in calc_precursor_neutral_mass: #{by}"
-    end
+  def self.calc_precursor_neutral_mass(m_plus_h, deltamass, h_plus=Ms::Mass::H_PLUS)
+    m_plus_h - h_plus + deltamass
   end
-
 end
 
 

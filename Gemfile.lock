@@ -8,7 +8,7 @@ GEM
       bundler (~> 1.0.0)
       git (>= 1.2.5)
       rake
-    ms-core (0.0.11)
+    ms-core (0.0.12)
       bio (>= 1.4.1)
     ms-testdata (0.1.1)
     nokogiri (1.4.4)
