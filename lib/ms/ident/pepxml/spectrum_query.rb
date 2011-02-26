@@ -1,21 +1,44 @@
 require 'nokogiri'
 require 'ms/mass'
+require 'merge'
 
 module Ms ; end
 module Ms::Ident ; end
 class Ms::Ident::Pepxml ; end
 
 # search_specification is a search constraint applied specifically to this query (a String)
-Ms::Ident::Pepxml::SpectrumQuery = Struct.new(:spectrum, :start_scan, :end_scan, :precursor_neutral_mass, :index, :assumed_charge, :retention_time_sec, :search_specification, :search_results, :pepxml_version) do
+class Ms::Ident::Pepxml::SpectrumQuery
+  include Merge
+  DEFAULT_MEMBERS = [:spectrum, :start_scan, :end_scan, :precursor_neutral_mass, :index, :assumed_charge, :retention_time_sec, :search_specification, :search_results, :pepxml_version]
+  
+  class << self
+    attr_writer :members
+    def members
+      @members || DEFAULT_MEMBERS
+    end
+  end
+
+  members.each {|memb| attr_accessor memb }
 
   Required = Set.new([:spectrum, :start_scan, :end_scan, :precursor_neutral_mass, :index, :assumed_charge])
   Optional = [:retention_time_sec, :search_specification]
-
-  # yeilds the empty search_results array if given a block
+  
+  # takes either a hash or an ordered list of values to set
+  # yeilds an empty search_results array if given a block
   def initialize(*args, &block)
-    search_results = []
-    super(*args)
-    block.call(search_results) if block
+    @search_results = [] 
+    if args.first.is_a?(Hash)
+      merge!(args.first)
+    else
+      self.class.members.zip(args) do |k,v|
+        send("#{k}=", v)
+      end
+    end
+    block.call(@search_results) if block
+  end
+
+  def members
+    self.class.members
   end
 
   ############################################################
@@ -31,7 +54,9 @@ Ms::Ident::Pepxml::SpectrumQuery = Struct.new(:spectrum, :start_scan, :end_scan,
       attrs_hash.delete(:retention_time_sec)
     end
     xmlb.spectrum_query(attrs_hash) do |xmlb|
-      search_results.to_xml(xmlb) 
+      search_results.each do |search_result|
+        search_result.to_xml(xmlb) 
+      end
     end
     builder || xmlb.doc.root.to_xml
   end
@@ -41,12 +66,12 @@ Ms::Ident::Pepxml::SpectrumQuery = Struct.new(:spectrum, :start_scan, :end_scan,
   end
 
   def from_pepxml_node(node)
-    self[0] = node['spectrum']
-    self[1] = node['start_scan'].to_i
-    self[2] = node['end_scan'].to_i
-    self[3] = node['precursor_neutral_mass'].to_f
-    self[4] = node['index'].to_i
-    self[5] = node['assumed_charge'].to_i
+    @spectrum = node['spectrum']
+    @start_scan = node['start_scan'].to_i
+    @end_scan = node['end_scan'].to_i
+    @precursor_neutral_mass = node['precursor_neutral_mass'].to_f
+    @index = node['index'].to_i
+    @assumed_charge = node['assumed_charge'].to_i
     self
   end
 

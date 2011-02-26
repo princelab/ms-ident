@@ -41,11 +41,12 @@ class Ms::Ident::Pepxml::MsmsRunSummary
   def initialize(hash={}, &block)
     @spectrum_queries = []
     merge!(hash, &block)
-    block.call() if block
+    block.call(block_arg) if block
   end
 
   # optionally takes an xml builder object and returns the builder, or the xml
   # string if no builder was given
+  # sets the index attribute of each spectrum query if it is not already set
   def to_xml(builder=nil)
     xmlb = builder || Nokogiri::XML::Builder.new
     hash = {:base_name => base_name, :msManufacturer => ms_manufacturer, :msModel => ms_model, :msIonization => ms_ionization, :msMassAnalyzer => ms_mass_analyzer, :msDetector => ms_detector, :raw_data_type => raw_data_type, :raw_data => raw_data}
@@ -53,7 +54,10 @@ class Ms::Ident::Pepxml::MsmsRunSummary
     xmlb.msms_run_summary(hash) do |xmlb|
       sample_enzyme.to_xml(xmlb) if sample_enzyme
       search_summary.to_xml(xmlb) if search_summary
-      spectrum_queries.each {|sq| sq.to_xml(xmlb)} if spectrum_queries
+      spectrum_queries.each_with_index do |sq,i| 
+        sq.index = i+1 unless sq.index
+        sq.to_xml(xmlb)
+      end
     end
     builder || xmlb.doc.root.to_xml
   end

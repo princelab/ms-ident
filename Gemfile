@@ -4,6 +4,7 @@ source "http://rubygems.org"
 #   gem "activesupport", ">= 2.3.5"
 gem 'nokogiri'
 gem 'ms-core', ">= 0.0.12"
+gem 'andand'
 
 dev_gems = {
     "spec-more" => ">= 0.0.4",

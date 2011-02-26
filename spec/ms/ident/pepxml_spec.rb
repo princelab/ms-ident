@@ -4,6 +4,10 @@ require 'ms/mass'
 require 'ms/mass/aa'
 require 'ms/ident/pepxml'
 require 'ms/ident/pepxml/modifications'
+require 'ms/ident/pepxml/spectrum_query'
+require 'ms/ident/pepxml/search_result'
+require 'ms/ident/pepxml/search_hit'
+require 'ms/ident/pepxml/search_hit/modification_info'
 
 describe "creating an Ms::Ident::Pepxml" do
   it "can be creating in a nested fashion reflecting internal structure" do
@@ -36,12 +40,38 @@ describe "creating an Ms::Ident::Pepxml" do
               :variable => 'Y', :symbol => '*')
               # invented, for example, a protein terminating mod
             modifications << Ms::Ident::Pepxml::TerminalModification.new( 
-              :terminus => 'c', :massdiff => 23.3333, :mass => Ms::Mass::MONO['oh'] + 23.3333, :variable => 'Y', :symbol => ']', :protein_terminus => 'c', :description => 'leave protein_terminus off if not protein mod'
+              :terminus => 'c', :massdiff => 23.3333, :mass => Ms::Mass::MONO['oh'] + 23.3333, :variable => 'Y', :symbol => '[', :protein_terminus => 'c', :description => 'leave protein_terminus off if not protein mod'
             )
+            modifications << Ms::Ident::Pepxml::TerminalModification.new( 
+              :terminus => 'c', :massdiff => 25.42322, :mass => Ms::Mass::MONO['h+'] + 25.42322, :variable => 'N', :symbol => ']', :description => 'an example of a c terminus modification'
+            )
+            parameters.merge!( :diff_search_options => "15.999400 M 79.979900 STY 0.000000 M 0.000000 X 0.000000 T 0.000000 Y",
+                              :digest_mass_range => '600.0 3500.0', :enzyme_info => 'Trypsin(KR/P) 1 1 KR P', # etc.... 
+                             )
           end
+          sq1 = Ms::Ident::Pepxml::SpectrumQuery.new(:spectrum  => '020.3.3.1', :start_scan => 3, :end_scan => 3, :precursor_neutral_mass => 1120.93743421875, :assumed_charge => 1) do |search_results|
+            sr1 = Ms::Ident::Pepxml::SearchResult.new do |search_hits|
+              modpositions = [[1, 243.1559], [6, 167.0581], [7,181.085]].map do |pair|  
+                Ms::Ident::Pepxml::SearchHit::ModificationInfo::ModAminoacidMass.new(*pair)
+              end
+              # order(modified_peptide, mod_aminoacid_masses, :mod_nterm_mass, :mod_cterm_mass)
+              # or can be set by hash
+              modification_info = Ms::Ident::Pepxml::SearchHit::ModificationInfo.new('Y#RLGGS#T#K', modpositions)
+              search_hits.<< Ms::Ident::Pepxml::SearchHit.new(
+                :hit_rank=>1, :peptide=>'YRLGGSTK', :peptide_prev_aa => "R", :peptide_next_aa => "K",
+                :protein => "gi|16130113|ref|NP_416680.1|", :num_tot_proteins => 1, :num_matched_ions => 5,
+                :tot_num_ions => 35, :calc_neutral_pep_mass => 1120.93163442, :massdiff => 0.00579979875010395,
+                :num_tol_term => 2, :num_missed_cleavages => 1, :is_rejected => 0
+              )
+            end
+            search_results << sr1
+          end
+          spectrum_queries << sq1
+          spectrum_queries.<< Ms::Ident::Pepxml::SpectrumQuery.new(:spectrum  => '020.10.10.1', :start_scan => 10, :end_scan => 10, :precursor_neutral_mass => 1120.90886976563, :assumed_charge => 1)
         end
       end
     end
+    puts pepxml.to_xml
     pepxml.to_xml.matches /<msms_pipeline_analysis /
   end
 end
