@@ -13,6 +13,8 @@ describe "creating an Ms::Ident::Pepxml" do
   extend Ms::Ident
 
   it "can be creating in a nested fashion reflecting internal structure" do
+    tags_that_should_be_present = %w(msms_pipeline_analysis msms_run_summary sample_enzyme search_summary spectrum_query search_result search_hit modification_info mod_aminoacid_mass search_score)
+
     pepxml = Pepxml.new do |msms_pipeline_analysis|
       msms_pipeline_analysis.merge!(:summary_xml => "020.xml") do |msms_run_summary|
         # prep the sample enzyme and search_summary
@@ -84,8 +86,12 @@ describe "creating an Ms::Ident::Pepxml" do
         end
       end
     end
-    puts pepxml.to_xml
-    pepxml.to_xml.matches /<msms_pipeline_analysis /
+    xml = pepxml.to_xml
+    tags_that_should_be_present.each do |tag|
+      xml.matches /<#{tag} ?/
+    end
+    xml.matches /<\?xml version="1.0" encoding="UTF-8"\?>/
+    xml.matches %r{<\?xml-stylesheet type="text/xsl" href="/tools/bin/TPP/tpp/schema/pepXML_std.xsl"\?>}
   end
 end
 

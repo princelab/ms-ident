@@ -18,6 +18,7 @@ end
 class Ms::Ident::Pepxml
   XML_STYLESHEET_LOCATION = '/tools/bin/TPP/tpp/schema/pepXML_std.xsl'
   DEFAULT_PEPXML_VERSION = MsmsPipelineAnalysis::PEPXML_VERSION
+  XML_ENCODING = 'UTF-8'
 
   attr_accessor :msms_pipeline_analysis
 
@@ -50,7 +51,7 @@ class Ms::Ident::Pepxml
   # if no outfile is given, an xml string is returned.  summary_xml should
   # have already been set and is not influenced by the outfile given here.
   def to_xml(outfile=nil)
-    builder = Nokogiri::XML::Builder.new
+    builder = Nokogiri::XML::Builder.new(:encoding => XML_ENCODING)
     msms_pipeline_analysis.to_xml(builder)
     add_stylesheet(builder.doc, Ms::Ident::Pepxml::XML_STYLESHEET_LOCATION)
     string = builder.doc.to_xml
