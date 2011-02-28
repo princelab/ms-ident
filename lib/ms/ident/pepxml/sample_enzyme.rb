@@ -1,4 +1,6 @@
 require 'merge'
+require 'strscan'
+
 module Ms ; end
 module Ms::Ident ; end
 class Ms::Ident::Pepxml ; end
@@ -56,17 +58,6 @@ class Ms::Ident::Pepxml::SampleEnzyme
   def self.from_pepxml_node(node)
     self.new.from_pepxml_node(node)
   end
-end
-
-###################################################
-###################################################
-###################################################
-###################################################
-# This is digestion methodology:
-
-=begin
-
-require 'strscan'
 
   # takes an amino acid sequence (e.g., -.PEPTIDK.L)
   # returns the number of missed cleavages
@@ -89,12 +80,12 @@ require 'strscan'
     num
   end
 
-  # requires full sequence (with heads and tails)
+  # requires full sequence (e.g., -.PEPTIDK.L)
   def num_tol_term(sequence)
     raise NotImplementedError, 'need to implement for N terminal sense'  if sense == 'N'
     no_cut = @no_cut || ''
     num_tol = 0
-    first, middle, last = SpecID::Pep.split_sequence(sequence)
+    first, middle, last = Ms::Id::Peptide.split_sequence(sequence)
     last_of_middle = middle[-1,1]
     first_of_middle = middle[0,1]
     if ( @cut.include?(first) && !no_cut.include?(first_of_middle) ) || first == '-'
@@ -105,7 +96,15 @@ require 'strscan'
     end
     num_tol
   end
+end
 
+###################################################
+###################################################
+###################################################
+###################################################
+# This is digestion methodology:
+
+=begin
   # returns all peptides of missed cleavages <= 'missed_cleavages'
   # so 2 missed cleavages will return all no missed cleavage peptides
   # all 1 missed cleavages and all 2 missed cleavages.

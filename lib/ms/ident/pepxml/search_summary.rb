@@ -30,7 +30,7 @@ class Ms::Ident::Pepxml::SearchSummary
   attr_accessor :out_data
   # by default, "1"
   attr_accessor :search_id
-  # a Modifications object
+  # an array of Ms::Ident::Pepxml::Modification objects
   attr_accessor :modifications
   # A SearchDatabase object (responds to :local_path and :type)
   attr_accessor :search_database
@@ -49,12 +49,14 @@ class Ms::Ident::Pepxml::SearchSummary
   def block_arg
     [@search_database = Ms::Ident::Pepxml::SearchDatabase.new,
       @enzymatic_search_constraint = Ms::Ident::Pepxml::EnzymaticSearchConstraint.new,
-      @modifications = Ms::Ident::Pepxml::Modifications.new,
+      @modifications,
       @parameters = Ms::Ident::Pepxml::Parameters.new,
     ]
   end
 
+  # initializes modifications to an empty array
   def initialize(hash={}, &block)
+    @modifications = []
     @search_id = DEFAULT_SEARCH_ID
     merge!(hash, &block)
   end
@@ -68,7 +70,9 @@ class Ms::Ident::Pepxml::SearchSummary
     builder.search_summary(hash) do |xmlb|
       search_database.to_xml(xmlb)
       xmlb.enzymatic_search_constraint(enzymatic_search_constraint) if enzymatic_search_constraint
-      modifications.to_xml(xmlb) if modifications
+      modifications.each do |mod|
+        mod.to_xml(xmlb)
+      end
       parameters.to_xml(xmlb) if parameters
     end
     builder || xmlb.doc.root.to_xml 

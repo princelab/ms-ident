@@ -5,17 +5,6 @@ module Ms ; end
 module Ms::Ident ; end
 class Ms::Ident::Pepxml ; end
 
-# holds a list of AminoacidModification and TerminalModification objects.
-class Ms::Ident::Pepxml::Modifications < Array
-  ## Generates the pepxml for static and differential amino acid mods based on
-  ## sequest object
-  def to_xml(builder=nil)
-    xmlb = builder || Nokogiri::XML::Builder.new
-    self.each {|mod| mod.to_xml(xmlb) }
-    builder || xmlb.doc.root.to_xml
-  end
-end
-
 # Modified aminoacid, static or variable
 # unless otherwise stated, all attributes can be anything
 class Ms::Ident::Pepxml::AminoacidModification
