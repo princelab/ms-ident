@@ -3,13 +3,8 @@ module Ms
   module Id
 
     module Search
-      attr_accessor :prots
-      attr_accessor :peps
-
-      def protein_class
-        self.const_get("Prot")
-      end
-
+      attr_accessor :proteins
+      attr_accessor :peptides
 
       # returns an array of peptide_hits and protein_hits that are linked to
       # one another.  NOTE: this will update peptide and protein

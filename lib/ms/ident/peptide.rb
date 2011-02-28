@@ -13,6 +13,8 @@ module Ms::Ident::Peptide
   
   class << self
 
+    # Takes a peptide sequence of the form '-.PEPTIDE.R', removes non-standard
+    # amino acids, and returns the center piece
     def sequence_to_aaseq(sequence)
       after_removed = remove_non_amino_acids(sequence)
       pieces = after_removed.split('.') 
