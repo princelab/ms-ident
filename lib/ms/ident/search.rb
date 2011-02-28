@@ -1,6 +1,6 @@
 
 module Ms
-  module Id
+  module Ident
 
     module Search
       attr_accessor :proteins
