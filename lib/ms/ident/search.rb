@@ -8,9 +8,9 @@ module Ms
 
       # returns an array of peptide_hits and protein_hits that are linked to
       # one another.  NOTE: this will update peptide and protein
-      # hits :prots and :peps attributes respectively).  Assumes that each search
-      # responds to :peps, each peptide responds to :prots and each protein to
-      # :peps.  Can be done on a single file to restore protein/peptide
+      # hits :proteins and :peptides attributes respectively).  Assumes that each search
+      # responds to :peptides, each peptide responds to :proteins and each protein to
+      # :peptides.  Can be done on a single file to restore protein/peptide
       # linkages to their original single-file state.
       # Assumes the protein is initialized with (reference, peptide_ar)
       #
@@ -21,14 +21,14 @@ module Ms
         reference_hash = {}
         ar_of_peptide_hit_arrays.each do |peptide_hits|
           all_peptide_hits.push(*peptide_hits)
-          peptide_hits.each do |pep|
-            pep.prots.each do |prot|
-              ref = prot.reference
+          peptide_hits.each do |peptide|
+            peptide.proteins.each do |protein|
+              ref = protein.reference
               if reference_hash.key? ref
-                reference_hash[ref].peps << pep
+                reference_hash[ref].peptides << peptide
                 reference_hash[ref]
               else
-                reference_hash[ref] = yield(prot, [pep])
+                reference_hash[ref] = yield(protein, [peptide])
               end
             end
           end
@@ -81,7 +81,7 @@ module Ms
       # arguments to the initializer for each search
       # the optional block yields the object for further processing
       def initialize(arg=nil, opts={})
-        @peps = []
+        @peptides = []
         @reference_hash = {}
         @searches = []
 
