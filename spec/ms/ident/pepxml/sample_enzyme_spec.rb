@@ -48,6 +48,86 @@ describe 'an Ms::Ident::Pepxml::SampleEnzyme' do
   end
 end
 
+describe 'an Ms::Ident::Pepxml::SampleEnzyme making enzyme digestion calculations' do
+  before do
+    @full_KRP = Ms::Ident::Pepxml::SampleEnzyme.new(
+      :name => 'trypsin',
+      :cut => 'KR',
+      :no_cut => 'P',
+      :sense => 'C',
+    )
+    @just_KR = Ms::Ident::Pepxml::SampleEnzyme.new(
+      :name => 'trypsin',
+      :cut => 'KR',
+      :no_cut => '',
+      :sense => 'C',
+    )
+  end
+
+  it 'calculates the number of tolerant termini' do
+    exp = [{
+      # full KR/P
+      %w(K EPTIDR E) => 2,
+      %w(K PEPTIDR E) => 1,
+      %w(F EEPTIDR E) => 1,
+      %w(F PEPTIDW R) => 0,
+    },
+    {
+      # just KR
+      %w(K EPTIDR E) => 2,
+      %w(K PEPTIDR E) => 2,
+      %w(F EEPTIDR E) => 1,
+      %w(F PEPTIDW R) => 0,
+    }
+    ]
+    sample_enzyme_ar = [@full_KRP, @just_KR]
+    sample_enzyme_ar.zip(exp) do |sample_enzyme,hash|
+      hash.each do |seq, val|
+        sample_enzyme.num_tol_term(*seq).should == val
+      end
+    end
+  end
+
+  it 'calculates number of missed cleavages' do
+    exp = [{
+      "EPTIDR" => 0,
+      "PEPTIDR" => 0,
+      "EEPTIDR" => 0,
+      "PEPTIDW" => 0,
+      "PERPTIDW" => 0,
+      "PEPKPTIDW" => 0,
+      "PEPKTIDW" => 1,
+      "RTTIDR" => 1,
+      "RTTIKK" => 2,
+      "PKEPRTIDW" => 2,
+      "PKEPRTIDKP" => 2,
+      "PKEPRAALKPEERPTIDKW" => 3,
+    },
+    {
+      "EPTIDR" => 0,
+      "PEPTIDR" => 0,
+      "EEPTIDR" => 0,
+      "PEPTIDW" => 0,
+      "PERPTIDW" => 1,
+      "PEPKPTIDW" => 1,
+      "PEPKTIDW" => 1,
+      "RTTIDR" => 1,
+      "RTTIKK" => 2,
+      "PKEPRTIDW" => 2,
+      "PKEPRTIDKP" => 3,
+      "PKEPRAALKPEERPTIDKW" => 5,
+    }
+    ]
+
+    sample_enzyme_ar = [@full_KRP, @just_KR]
+    sample_enzyme_ar.zip(exp) do |sample_enzyme, hash|
+      hash.each do |aaseq, val|
+        sample_enzyme.num_missed_cleavages(aaseq).should == val
+      end
+    end
+  end
+end
+
 xdescribe 'read in from an xml node' do
   # placeholder until written
 end
@@ -93,86 +173,6 @@ end
 
 describe SampleEnzyme, 'making enzyme calculations on sequences and aaseqs' do
 
-  before(:each) do
-    @full_KRP = SampleEnzyme.new do |se|
-      se.name = 'trypsin'
-      se.cut = 'KR'
-      se.no_cut = 'P'
-      se.sense = 'C'
-    end
-    @just_KR = SampleEnzyme.new do |se|
-      se.name = 'trypsin'
-      se.cut = 'KR'
-      se.no_cut = ''
-      se.sense = 'C'
-    end
-  end
-
-  it 'calculates the number of tolerant termini' do
-    exp = [{
-      # full KR/P
-      'K.EPTIDR.E' => 2,
-      'K.PEPTIDR.E' => 1,
-      'F.EEPTIDR.E' => 1,
-      'F.PEPTIDW.R' => 0,
-    },
-    {
-      # just KR
-      'K.EPTIDR.E' => 2,
-      'K.PEPTIDR.E' => 2,
-      'F.EEPTIDR.E' => 1,
-      'F.PEPTIDW.R' => 0,
-    }
-    ]
-    scall = Sequest::PepXML::SearchHit
-    sample_enzyme_ar = [@full_KRP, @just_KR]
-    sample_enzyme_ar.zip(exp) do |sample_enzyme,hash|
-      hash.each do |seq, val|
-        sample_enzyme.num_tol_term(seq).should == val
-      end
-    end
-  end
-
-  it 'calculates number of missed cleavages' do
-    exp = [{
-    "EPTIDR" => 0,
-    "PEPTIDR" => 0,
-    "EEPTIDR" => 0,
-    "PEPTIDW" => 0,
-    "PERPTIDW" => 0,
-    "PEPKPTIDW" => 0,
-    "PEPKTIDW" => 1,
-    "RTTIDR" => 1,
-    "RTTIKK" => 2,
-    "PKEPRTIDW" => 2,
-    "PKEPRTIDKP" => 2,
-    "PKEPRAALKPEERPTIDKW" => 3,
-    },
-    {
-    "EPTIDR" => 0,
-    "PEPTIDR" => 0,
-    "EEPTIDR" => 0,
-    "PEPTIDW" => 0,
-    "PERPTIDW" => 1,
-    "PEPKPTIDW" => 1,
-    "PEPKTIDW" => 1,
-    "RTTIDR" => 1,
-    "RTTIKK" => 2,
-    "PKEPRTIDW" => 2,
-    "PKEPRTIDKP" => 3,
-    "PKEPRAALKPEERPTIDKW" => 5,
-    }
-    ]
-
-    sample_enzyme_ar = [@full_KRP, @just_KR]
-    sample_enzyme_ar.zip(exp) do |sample_enzyme, hash|
-      hash.each do |aaseq, val|
-        #first, middle, last = SpecID::Pep.split_sequence(seq)
-        # note that we are only using the middle section!
-        sample_enzyme.num_missed_cleavages(aaseq).should == val
-      end
-    end
-  end
 
 end
 =end

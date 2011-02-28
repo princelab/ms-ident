@@ -59,9 +59,10 @@ class Ms::Ident::Pepxml::SampleEnzyme
     self.new.from_pepxml_node(node)
   end
 
-  # takes an amino acid sequence (e.g., -.PEPTIDK.L)
+  # takes an amino acid sequence (e.g. PEPTIDE).
   # returns the number of missed cleavages
   def num_missed_cleavages(aaseq)
+    seq_to_scan = '  ' + aaseq + '  ' 
     raise NotImplementedError, 'need to implement for N terminal sense'  if sense == 'N'
     @num_missed_cleavages_regex = 
       if @num_missed_cleavages_regex ; @num_missed_cleavages_regex
@@ -80,18 +81,17 @@ class Ms::Ident::Pepxml::SampleEnzyme
     num
   end
 
-  # requires full sequence (e.g., -.PEPTIDK.L)
-  def num_tol_term(sequence)
+  # No arguments should contain non-standard amino acids
+  def num_tol_term(prev_aa, middle, next_aa)
     raise NotImplementedError, 'need to implement for N terminal sense'  if sense == 'N'
     no_cut = @no_cut || ''
     num_tol = 0
-    first, middle, last = Ms::Id::Peptide.split_sequence(sequence)
     last_of_middle = middle[-1,1]
     first_of_middle = middle[0,1]
-    if ( @cut.include?(first) && !no_cut.include?(first_of_middle) ) || first == '-'
+    if ( @cut.include?(prev_aa) && !no_cut.include?(first_of_middle) ) || prev_aa == '-'
       num_tol += 1
     end
-    if @cut.include?(last_of_middle) && !no_cut.include?(last) || last == '-'
+    if @cut.include?(last_of_middle) && !no_cut.include?(next_aa) || next_aa == '-'
       num_tol += 1
     end
     num_tol
