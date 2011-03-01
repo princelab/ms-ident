@@ -48,10 +48,12 @@ class Ms::Ident::Pepxml
     to_xml(File.dirname(msms_pipeline_analysis.msms_run_summary.base_name) + '/' + msms_pipeline_analysis.summary_xml)
   end
 
-  # if no outfile is given, an xml string is returned.  summary_xml should
-  # have already been set and is not influenced by the outfile given here.
-  def to_xml(outfile=nil)
+  # if no outfile is given, an xml string is returned.  By default, the
+  # summary_xml value will be rewritten to the full path of the outfile if one
+  # is specified (since the value is supposed to be self-referential).
+  def to_xml(outfile=nil, update_summary_xml=true)
     builder = Nokogiri::XML::Builder.new(:encoding => XML_ENCODING)
+    msms_pipeline_analysis.summary_xml = File.expand_path(outfile) if (update_summary_xml && outfile)
     msms_pipeline_analysis.to_xml(builder)
     add_stylesheet(builder.doc, Ms::Ident::Pepxml::XML_STYLESHEET_LOCATION)
     string = builder.doc.to_xml
