@@ -2,6 +2,8 @@ require 'nokogiri'
 require 'ms/mass'
 require 'merge'
 
+require 'ms/ident/pepxml/search_result'
+
 module Ms ; end
 module Ms::Ident ; end
 class Ms::Ident::Pepxml ; end

@@ -3,6 +3,7 @@ require 'nokogiri'
 
 require 'ms/ident/pepxml/sample_enzyme'
 require 'ms/ident/pepxml/search_summary'
+require 'ms/ident/pepxml/spectrum_query'
 
 module Ms ; end
 module Ms::Ident ; end

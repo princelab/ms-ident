@@ -1,5 +1,7 @@
 require 'nokogiri'
 
+require 'ms/ident/pepxml/search_hit'
+
 module Ms ; end
 module Ms::Ident ; end
 class Ms::Ident::Pepxml ; end
