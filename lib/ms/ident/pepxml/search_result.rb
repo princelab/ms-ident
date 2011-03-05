@@ -10,9 +10,14 @@ class Ms::Ident::Pepxml::SearchResult
   # an array of search_hits
   attr_accessor :search_hits
 
-  # if block given, then yields an empty search_hits array
+  # if block given, then yields an empty search_hits array.
+  # For consistency with other objects, will also take a hash that has the key
+  # :search_hits and the value an array.
   def initialize(search_hits = [], &block)
     @search_hits = search_hits
+    if search_hits.is_a?(Hash)
+      @search_hits = search_hits[:search_hits]
+    end
     block.call(@search_hits) if block
   end
 
