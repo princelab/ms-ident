@@ -43,21 +43,40 @@ class Ms::Ident::Pepxml
     doc
   end
   
-  # writes xml file named msms_pipeline_analysis.summary_xml into the msms_run_summary.base_name directory
-  def to_xml_file
-    to_xml(File.dirname(msms_pipeline_analysis.msms_run_summary.base_name) + '/' + msms_pipeline_analysis.summary_xml)
-  end
+  # if no options are given, an xml string is returned.  If either :outdir or
+  # :outfile is given, the xml is written to file and the output filename is returned.
+  #
+  # options:
+  #     
+  #     arg         default
+  #     :outdir             => nil   write to disk using this outdir with summary_xml basename
+  #     :outfile            => nil   write to this filename (overrides outdir)
+  #     :update_summary_xml => true  update summary_xml attribute to point to the output file true/false
+  #
+  # set outdir to
+  # File.dirname(pepxml_obj.msms_pipeline_analysis.msms_run_summary.base_name)
+  # to write to the same directory as the input search file.
+  def to_xml(opts={})
+    opt = {:update_summary_xml => true, :outdir => nil, :outfile => nil}.merge(opts)
 
-  # if no outfile is given, an xml string is returned.  By default, the
-  # summary_xml value will be rewritten to the full path of the outfile if one
-  # is specified (since the value is supposed to be self-referential).
-  def to_xml(outfile=nil, update_summary_xml=true)
-    builder = Nokogiri::XML::Builder.new(:encoding => XML_ENCODING)
+    if opt[:outfile]
+      outfile = opt[:outfile]
+    elsif opt[:outdir]
+      outfile = File.join(opt[:outdir], msms_pipeline_analysis.summary_xml.split(/[\/\\]/).last)
+    end
     msms_pipeline_analysis.summary_xml = File.expand_path(outfile) if (update_summary_xml && outfile)
+
+    builder = Nokogiri::XML::Builder.new(:encoding => XML_ENCODING)
     msms_pipeline_analysis.to_xml(builder)
     add_stylesheet(builder.doc, Ms::Ident::Pepxml::XML_STYLESHEET_LOCATION)
     string = builder.doc.to_xml
-    outfile ? File.open(outfile,'w') {|out| out.print(string) } : string
+
+    if outfile 
+      File.open(outfile,'w') {|out| out.print(string) }
+      outfile
+    else
+      string
+    end
   end
 end
 
