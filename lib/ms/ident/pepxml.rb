@@ -64,7 +64,7 @@ class Ms::Ident::Pepxml
     elsif opt[:outdir]
       outfile = File.join(opt[:outdir], msms_pipeline_analysis.summary_xml.split(/[\/\\]/).last)
     end
-    msms_pipeline_analysis.summary_xml = File.expand_path(outfile) if (update_summary_xml && outfile)
+    self.msms_pipeline_analysis.summary_xml = File.expand_path(outfile) if (opt[:update_summary_xml] && outfile)
 
     builder = Nokogiri::XML::Builder.new(:encoding => XML_ENCODING)
     msms_pipeline_analysis.to_xml(builder)
