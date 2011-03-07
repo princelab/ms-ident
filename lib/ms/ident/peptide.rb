@@ -53,25 +53,22 @@ module Ms::Ident::Peptide
     #   A.PEPTIDE    # -> A, PEPTIDE, -
     #   PEPTIDE      # -> nil,nil,nil
     def split_sequence(sequence)
-      peptide_prev_aa = ""; peptide = ""; peptide_next_aa = ""
       pieces = sequence.split('.') 
       case pieces.size
       when 3
-        peptide_prev_aa, peptide, peptide_next_aa = *pieces
+        pieces
       when 2
         if pieces[0].size > 1  ## N termini
-          peptide_prev_aa, peptide, peptide_next_aa = '-', pieces[0], pieces[1]
+          ['-', pieces[0], pieces[1]]
         else  ## C termini
-          peptide_prev_aa, peptide, peptide_next_aa = pieces[0], pieces[1], '-'
+          [pieces[0], pieces[1], '-']
         end
       when 1  ## this must be a parse error!
-        peptide_prev_aa, peptide, peptide_next_aa = nil,nil,nil
+        [nil,nil,nil]
       when 0
-        peptide_prev_aa, peptide, peptide_next_aa = nil,nil,nil
+        [nil,nil,nil]
       end
-      return peptide_prev_aa, peptide, peptide_next_aa
     end
-
   end
 
 
