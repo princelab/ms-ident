@@ -50,11 +50,12 @@ Ms::Ident::Pepxml::SearchHit::ModificationInfo = Struct.new(:modified_peptide, :
     ## Create the attribute string:
     atts = [:mod_nterm_mass, :mod_cterm_mass, :modified_peptide]
     atts.map! {|at| (v=send(at)) && [at, v] }.compact
-    xmlb.modification_info(Hash[atts]) do
+    xmlb.modification_info(Hash[atts]) do |xmlb|
       mod_aminoacid_masses.andand.each do |mod_aa_mass|
         mod_aa_mass.to_xml(xmlb)
       end
     end
+    builder || xmlb.doc.root.to_s
   end
 
   def self.from_pepxml_node(node)
@@ -78,5 +79,6 @@ end
 Ms::Ident::Pepxml::SearchHit::ModificationInfo::ModAminoacidMass = Struct.new(:position, :mass) do
   def to_xml(builder)
     builder.mod_aminoacid_mass(:position => position, :mass => mass)
+    builder
   end
 end
