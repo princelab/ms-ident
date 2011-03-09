@@ -45,6 +45,8 @@ class Ms::Ident::Pepxml
   
   # if no options are given, an xml string is returned.  If either :outdir or
   # :outfile is given, the xml is written to file and the output filename is returned.
+  # A single string argument will be considered the :outdir and other defaults
+  # used as shown below.
   #
   # options:
   #     
@@ -58,6 +60,7 @@ class Ms::Ident::Pepxml
   # to write to the same directory as the input search file.
   def to_xml(opts={})
     opts ||= {}
+    opts.is_a?(String) && opts = {:outdir => opts}
     opt = {:update_summary_xml => true, :outdir => nil, :outfile => nil}.merge(opts)
 
     if opt[:outfile]
