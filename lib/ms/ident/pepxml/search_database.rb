@@ -1,3 +1,4 @@
+require 'ms/fasta'
 require 'merge'
 module Ms ; end
 module Ms::Ident ; end
@@ -25,11 +26,17 @@ class Ms::Ident::Pepxml
     def initialize(hash={}, get_size_of_residues=false)
       merge!(hash)
       if get_size_of_residues && File.exist?(@local_path)
-        @size_of_residues = 0
-        Ms::Fasta.foreach(@local_path) do |entry|
-          @size_of_residues += entry.sequence.size
-        end
+        set_size_of_residues!
       end
+    end
+
+    # returns self for chaining
+    def set_size_of_residues!
+      @size_of_residues = 0
+      Ms::Fasta.foreach(@local_path) do |entry|
+        @size_of_residues += entry.sequence.size
+      end
+      self
     end
 
     def to_xml(builder)
