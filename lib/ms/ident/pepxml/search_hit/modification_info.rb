@@ -31,16 +31,11 @@ Ms::Ident::Pepxml::SearchHit::ModificationInfo = Struct.new(:modified_peptide, :
   # position ranges from 1 to peptide length
   #attr_accessor :mod_aminoacid_masses
 
-  class << self
-    alias_method :old_new, :new
-    # takes either a hash or the normal list of values to set.
-    def new(*args)
-      if args.first.is_a?(Hash)
-        args = args.first.values_at(*members)
-      end
-      obj = old_new(*args)
-      obj
+  def initialize(*args)
+    if args.first.is_a?(Hash)
+      args = args.first.values_at(*members)
     end
+    super(*args)
   end
 
   # Will escape any xml special chars in modified_peptide

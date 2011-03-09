@@ -57,6 +57,7 @@ class Ms::Ident::Pepxml
   # File.dirname(pepxml_obj.msms_pipeline_analysis.msms_run_summary.base_name)
   # to write to the same directory as the input search file.
   def to_xml(opts={})
+    opts ||= {}
     opt = {:update_summary_xml => true, :outdir => nil, :outfile => nil}.merge(opts)
 
     if opt[:outfile]
