@@ -1,4 +1,3 @@
-
 module Ms ; end
 module Ms::Ident ; end
 
