@@ -82,6 +82,12 @@ describe 'reading a peptide centric database' do
   outfiles = Ms::Ident::Peptide::Db.cmdline([FASTA_FILE])
   @outfile = outfiles.first
 
+  it 'creates a hash that can retrieve peptides as an array' do
+    hash = Ms::Ident::Peptide::Db.new(@outfile)
+    hash["AVTEQGHELSNEER"].enums %w(sp|P31946|1433B_HUMAN	sp|P31946-2|1433B_HUMAN)
+    hash["VRAAR"].enums ["tr|D3DX18|D3DX18_HUMAN"]
+  end
+
   it 'reads the file on disk with random access or is enumerable' do
     Ms::Ident::Peptide::Db::IO.open(@outfile) do |io|
       io["AVTEQGHELSNEER"].enums %w(sp|P31946|1433B_HUMAN	sp|P31946-2|1433B_HUMAN)
