@@ -14,11 +14,13 @@ module Ms::Ident::Protein
     reference.split(/[\s\r]/)[0]
   end
 
+  module_function
   # greedy algorithm to map a set of peptide_hits to protein groups.
   # each peptide hit should respond to :aaseq, :charge, :proteins if a block
-  # is given, yields a set of peptide hits that then should return a metric(s)
-  # to sort by for creating greedy protein groups.  if no block is given, the
-  # groups are sorted by [# uniq aaseqs, # uniq aaseq+charge, # peptide_hits]
+  # is given, yields a set of peptide hits and expects a metric or array to
+  # sort by for creating greedy protein groups (the greediest proteins should
+  # sort to the back of the array).  if no block is given, the groups are
+  # sorted by [# uniq aaseqs, # uniq aaseq+charge, # peptide_hits].
   def peptide_hits_to_protein_groups(peptide_hits, &sort_peptide_sets_by)
     sort_peptide_sets_by ||= lambda {|peptide_hits|
       num_uniq_aaseqs = peptide_hits.map {|hit| hit.aaseq }.uniq.size
@@ -29,7 +31,7 @@ module Ms::Ident::Protein
     protein_to_peptides = Hash.new {|h,k| h[k] = Set.new }
     peptide_hits.each do |peptide_hit|
       peptide_hit.proteins.each do |protein|
-        protein_to_peptides[protein] << peptide
+        protein_to_peptides[protein] << peptide_hit
       end
     end
     peptides_to_protein_group = Hash.new {|h,k| h[k] = [] }
@@ -39,7 +41,7 @@ module Ms::Ident::Protein
     sorted_peptide_sets = peptides_to_protein_group.keys.sort_by(&sort_peptide_sets_by)
     accounted_for = Set.new
     surviving_protein_groups = []
-    peptide_sets_with_unaccounted_peptides = sorted_peptide_sets.select do |peptide_set|
+    peptide_sets_with_unaccounted_peptides = sorted_peptide_sets.reverse.select do |peptide_set|
       peptide_set.any? do |peptide_hit| 
         # has an unaccounted for peptide?
         accounted_for.include?(peptide_hit) ? false : accounted_for.add(peptide_hit)
