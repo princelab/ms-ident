@@ -5,7 +5,11 @@ module Ms ; end
 module Ms::Ident ; end
 module Ms::Ident::Peptide ; end
 
-module Ms::Ident::Peptide::Db 
+# the object itself is a modified Hash.
+# It is initialized with the database file and a protein array can be
+# retrieved with the #[] method given an amino acid sequence.  All other
+# methods are untested at this time and should be avoided!
+class Ms::Ident::Peptide::Db < Hash
   MAX_NUM_AA_EXPANSION = 3
 
   # the twenty standard amino acids
@@ -163,6 +167,17 @@ module Ms::Ident::Peptide::Db
       to_expand = new_peps.flatten
     end
     to_expand
+  end
+
+  def initialize(db_file)
+    self.replace(YAML.load_file(db_file))
+  end
+
+  alias_method :old_bracket, '[]'.to_sym
+
+  # returns the protein id's as an array
+  def [](key)
+    old_bracket(key).chomp.split(PROTEIN_DELIMITER)
   end
 
   # an object for on disk retrieval of db entries
