@@ -13,8 +13,8 @@ class Ms::Ident::PeptideHit
     class << self
 
       # writes to the file, adding an extension
-      def to_phq(base, hits, qvalues=nil)
-        to_file(base + FILE_EXTENSION, hits)
+      def to_phq(base, hits, qvalues=[])
+        to_file(base + FILE_EXTENSION, hits, qvalues)
       end
 
       # writes the peptide hits to a phq.tsv file. qvalues is a parallel array
