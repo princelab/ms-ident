@@ -40,7 +40,7 @@ class Ms::Ident::PeptideHit
             line.chomp!
             (aaseq, charge, qvalue) = line.split(FILE_DELIMITER)
             ph = Ms::Ident::PeptideHit.new
-            ph.aaseq = aaseq ; ph.charge = charge ; ph.qvalue = qvalue
+            ph.aaseq = aaseq ; ph.charge = charge.to_i ; ph.qvalue = qvalue.to_f
             peptide_hits << ph
           end
         end

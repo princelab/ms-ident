@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-require 'ms/ident/protein'
+require 'ms/ident/protein_group'
 
 PeptideHit = Struct.new(:aaseq, :charge, :proteins) do
   def inspect # easier to read output
@@ -36,22 +36,21 @@ describe 'creating minimal protein groups from peptide hits' do
   it 'is a greedy algorithm' do
     @prot_hits.each {|prthit| @prot_hits_hash[prthit.id].each {|pep| pep.proteins << prthit } }
     # big_guy has all the peptides, so it takes them all
-    reply = Ms::Ident::Protein.peptide_hits_to_protein_groups(@pep_hits)
-    reply.first.size.is 2 # the group and the peptide set
-    reply.first.first.size.is 1 # the group
-    reply.first.first.first.id.is 'big_guy'
+    protein_groups = Ms::Ident::ProteinGroup.peptide_hits_to_protein_groups(@pep_hits)
+    protein_groups.first.size.is 1# the group
+    protein_groups.first.first.id.is 'big_guy'
   end
 
   it 'removes proteins accounted for only as little pieces of larger proteins' do
     @prot_hits[1..-1].each {|prthit| @prot_hits_hash[prthit.id].each {|pep| pep.proteins << prthit } }
-    reply = Ms::Ident::Protein.peptide_hits_to_protein_groups(@pep_hits)
+    protein_groups = Ms::Ident::ProteinGroup.peptide_hits_to_protein_groups(@pep_hits)
     # no subsumed_by_medium
-    reply.map(&:first).any? {|protein_list| protein_list.any? {|v| v.id == 'subsumed_by_medium' }}.is false
+    protein_groups.any? {|prot_group| prot_group.any? {|v| v.id == 'subsumed_by_medium' }}.is false
   end
 
   it 'allows alternate sorting algorithms for greediness' do
     @prot_hits.each {|prthit| @prot_hits_hash[prthit.id].each {|pep| pep.proteins << prthit } }
-    reply = Ms::Ident::Protein.peptide_hits_to_protein_groups(@pep_hits) do |prot_and_peptide_hits|
+    prot_groups = Ms::Ident::ProteinGroup.peptide_hits_to_protein_groups(@pep_hits) do |prot_and_peptide_hits|
       # deliberate using a counterintuitive sorting method to give little guys
       # a chance
       -prot_and_peptide_hits.last.size
@@ -61,7 +60,7 @@ describe 'creating minimal protein groups from peptide hits' do
     # to add to the mix.  This demonstrates how proteins can be weighted in
     # different ways based on their peptide hits.
     seen = []
-    reply.each {|pair| pair.first.each {|prot| seen << prot.id } }
+    prot_groups.each {|pg| pg.each {|prot| seen << prot.id } }
     # big guy is completely accounted for in the now prioritized little guy
     # and medium guys, etc.
     seen.sort.is @prot_hits_hash.keys[1..-1].sort

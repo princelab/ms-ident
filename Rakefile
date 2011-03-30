@@ -8,7 +8,7 @@ Jeweler::Tasks.new do |gem|
   gem.homepage = "http://github.com/jtprince/ms-ident"
   gem.license = "MIT"
   gem.summary = %Q{mspire library for working with mzIdentML and pepxml}
-  gem.description = %Q{mspire library for working with mzIdentML and pepxml}
+  gem.description = %Q{mspire library for working with mzIdentML, pepxml, and related.}
   gem.email = "jtprince@gmail.com"
   gem.authors = ["John T. Prince"]
   gem.rubyforge_project = 'mspire'

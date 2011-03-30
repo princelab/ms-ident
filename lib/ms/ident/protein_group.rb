@@ -27,8 +27,7 @@ module Ms
       # consider redefining the #hash method to be object_id for performance and
       # accuracy.
       #
-      # returns an array of ProteinGroup objects, each with a Set of
-      # peptide_hits.
+      # returns an array of ProteinGroup objects, each set with :peptide_hits
       def self.peptide_hits_to_protein_groups(peptide_hits, &sort_by)
         sort_by ||= PRIORITIZE_PROTEINS
         # note to self: I wrote this in 2011, so I think I know what I'm doing now
@@ -42,8 +41,15 @@ module Ms
         protein_to_peptides.each do |protein, peptide_set|
           peptides_to_protein_group[peptide_set] << protein
         end
+        peptides_to_protein_group.each do |pephits,ar_of_prots| 
+          pg = Ms::Ident::ProteinGroup.new(ar_of_prots)
+          pg.peptide_hits = pephits
+          peptides_to_protein_group[pephits] = pg
+        end
+
         protein_group_to_peptides = peptides_to_protein_group.invert
-        greedy_first = ProteinGroup.new(protein_group_to_peptides.sort_by(&sort_by).reverse)
+        greedy_first = protein_group_to_peptides.sort_by(&sort_by).reverse
+
         accounted_for = Set.new
         # we are discarding the subsumed sets, but we could get them with
         # partition
@@ -58,7 +64,7 @@ module Ms
           group.peptide_hits = peptide_set if has_an_unaccounted_peptide
           has_an_unaccounted_peptide
         end
-        greedy_first
+        greedy_first.map(&:first)
       end
 
     end
