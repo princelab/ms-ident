@@ -186,6 +186,7 @@ class Ms::Ident::Peptide::Db < Hash
   class IO
     include Enumerable
     def self.open(filename, &block)
+      raise ArgumentError unless block
       File.open(filename) do |io|
         block.call(self.new(io))
       end
@@ -207,9 +208,11 @@ class Ms::Ident::Peptide::Db < Hash
         @index[key] = [start, end_pos-start]
       end
     end
+
     # returns an array of proteins for the given key (peptide aaseq)
     def [](key)
       (start, length) = @index[key]
+      return nil unless start
       @io.seek(start)
       string = @io.read(length)
       string.chomp!

@@ -39,7 +39,7 @@ class Ms::Ident::PeptideHit
           io.each do |line|
             line.chomp!
             (aaseq, charge, qvalue) = line.split(FILE_DELIMITER)
-            ph = PeptideHit.new
+            ph = Ms::Ident::PeptideHit.new
             ph.aaseq = aaseq ; ph.charge = charge ; ph.qvalue = qvalue
             peptide_hits << ph
           end
