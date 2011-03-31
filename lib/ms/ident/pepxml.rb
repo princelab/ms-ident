@@ -2,6 +2,8 @@ require 'nokogiri'
 require 'ms/ident'
 require 'ms/ident/pepxml/msms_pipeline_analysis'
 
+require 'ostruct'
+
 module Ms ; module Ident ; end ; end
 
 class Numeric
@@ -22,11 +24,8 @@ class Ms::Ident::Pepxml
 
   attr_accessor :msms_pipeline_analysis
 
-  def self.search_hits(file)
-    fields = [:aaseq, :charge]
-    ss_names = []
-    have_ss_names = false
-    # begin with aaseq, charge
+  # returns an array of Ms::Ident::Pepxml::SearchHit::Simple structs
+  def self.simple_search_hits(file)
     hit_values = File.open(file) do |io|
       doc = Nokogiri::XML.parse(io, nil, nil, Nokogiri::XML::ParseOptions::DEFAULT_XML | Nokogiri::XML::ParseOptions::NOBLANKS)
       # we can work with namespaces, or just remove them ...
@@ -37,18 +36,13 @@ class Ms::Ident::Pepxml
         aaseq = search_hit['peptide']
         charge = search_hit.parent.parent['assumed_charge'].to_i
         search_score_nodes = search_hit.children.select {|node| node.name == 'search_score' }
-        ss_values = []
+        search_scores = {}
         search_score_nodes.each do |node|
-          ss_names << node['name'].to_sym unless have_ss_names
-          ss_values << node['value'].to_f
+          search_scores[node['name'].to_sym] = node['value'].to_f
         end
-        have_ss_names = true
-        [aaseq, charge, *ss_values]
+        Ms::Ident::Pepxml::SearchHit::Simple.new(aaseq, charge, search_scores)
       end
     end
-    fields.push(*ss_names)
-    peptide_hit_class = Struct.new(*fields)
-    hit_values.map {|ar| peptide_hit_class.new(*ar) }
   end
 
   def pepxml_version

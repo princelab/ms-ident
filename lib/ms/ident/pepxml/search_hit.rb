@@ -120,6 +120,7 @@ class Ms::Ident::Pepxml
     end
 
     def from_pepxml_node(node)
+      node.attributes
       self[0] = node['hit_rank'].to_i
       self[1] = node['peptide']
       self[2] = node['peptide_prev_aa']
@@ -135,6 +136,8 @@ class Ms::Ident::Pepxml
       self[12] = node['is_rejected'].to_i
       self
     end
+
+    Simple = Struct.new(:aaseq, :charge, :search_scores)
   end
 
 end
