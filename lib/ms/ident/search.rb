@@ -2,9 +2,10 @@
 module Ms
   module Ident
 
-    module Search
-      attr_accessor :proteins
-      attr_accessor :peptides
+    class Search
+      attr_accessor :id
+      attr_accessor :peptide_hits
+      alias_method :hits, :peptide_hits
 
       # returns an array of peptide_hits and protein_hits that are linked to
       # one another.  NOTE: this will update peptide and protein
@@ -40,7 +41,6 @@ module Ms
 
 
     module SearchGroup 
-      include Search
 
       # an array of search objects
       attr_accessor :searches

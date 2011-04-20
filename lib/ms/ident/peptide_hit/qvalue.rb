@@ -1,3 +1,4 @@
+require 'ms/ident/search'
 require 'ms/ident/peptide_hit'
 
 module Ms ; end
@@ -7,7 +8,7 @@ class Ms::Ident::PeptideHit
   module Qvalue
     FILE_EXTENSION = '.phq.tsv'
     FILE_DELIMITER = "\t"
-    HEADER = %w(aaseq charge qvalue)
+    HEADER = %w(run_id id aaseq charge qvalue)
 
     class << self
 
@@ -23,7 +24,7 @@ class Ms::Ident::PeptideHit
         File.open(filename,'w') do |out|
           out.puts HEADER.join(FILE_DELIMITER)
           hits.zip(qvalues) do |hit, qvalue|
-            out.puts [hit.aaseq, hit.charge, qvalue || hit.qvalue].join(FILE_DELIMITER)
+            out.puts [hit.search.id, hit.id, hit.aaseq, hit.charge, qvalue || hit.qvalue].join(FILE_DELIMITER)
           end
         end
         filename
@@ -31,15 +32,17 @@ class Ms::Ident::PeptideHit
 
       # returns an array of PeptideHit objects from a phq.tsv
       def from_file(filename)
+        searches = Hash.new {|h,id|  h[id] = Ms::Ident::Search.new(id) }
         peptide_hits = []
         File.open(filename) do |io|
           header = io.readline.chomp.split(FILE_DELIMITER)
           raise "bad headers" unless header == HEADER 
           io.each do |line|
             line.chomp!
-            (aaseq, charge, qvalue) = line.split(FILE_DELIMITER)
+            (run_id, id, aaseq, charge, qvalue) = line.split(FILE_DELIMITER)
             ph = Ms::Ident::PeptideHit.new
-            ph.aaseq = aaseq ; ph.charge = charge.to_i ; ph.qvalue = qvalue.to_f
+            ph.search = searches[run_id]
+            ph.id = id; ph.aaseq = aaseq ; ph.charge = charge.to_i ; ph.qvalue = qvalue.to_f
             peptide_hits << ph
           end
         end

@@ -27,12 +27,12 @@ class Ms::Ident::Pepxml
   # returns an array of Ms::Ident::Pepxml::SearchHit::Simple structs
   def self.simple_search_hits(file)
     hit_values = File.open(file) do |io|
-      doc = Nokogiri::XML.parse(io, nil, nil, Nokogiri::XML::ParseOptions::DEFAULT_XML | Nokogiri::XML::ParseOptions::NOBLANKS)
+      doc = Nokogiri::XML.parse(io, nil, nil, Nokogiri::XML::ParseOptions::DEFAULT_XML | Nokogiri::XML::ParseOptions::NOBLANKS | Nokogiri::XML::ParseOptions::STRICT)
       # we can work with namespaces, or just remove them ...
       doc.remove_namespaces!
       root = doc.root
       search_hits = root.xpath('//search_hit')
-      search_hits.map do |search_hit| 
+      search_hits.each_with_index.map do |search_hit,i| 
         aaseq = search_hit['peptide']
         charge = search_hit.parent.parent['assumed_charge'].to_i
         search_score_nodes = search_hit.children.select {|node| node.name == 'search_score' }
@@ -40,7 +40,7 @@ class Ms::Ident::Pepxml
         search_score_nodes.each do |node|
           search_scores[node['name'].to_sym] = node['value'].to_f
         end
-        Ms::Ident::Pepxml::SearchHit::Simple.new(aaseq, charge, search_scores)
+        Ms::Ident::Pepxml::SearchHit::Simple.new("hit_#{i}", Ms::Ident::Search.new(file.chomp(File.extname(file))), aaseq, charge, search_scores)
       end
     end
   end

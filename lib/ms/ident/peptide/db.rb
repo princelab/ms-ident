@@ -1,5 +1,6 @@
 require 'ms/in_silico/digester'
 require 'ms/fasta'
+require 'optparse'
 
 module Ms ; end
 module Ms::Ident ; end

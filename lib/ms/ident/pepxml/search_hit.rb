@@ -137,7 +137,7 @@ class Ms::Ident::Pepxml
       self
     end
 
-    Simple = Struct.new(:aaseq, :charge, :search_scores)
+    Simple = Struct.new(:id, :search, :aaseq, :charge, :search_scores)
   end
 
 end
