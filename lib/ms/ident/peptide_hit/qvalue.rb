@@ -5,7 +5,6 @@ module Ms::Ident ; end
 
 class Ms::Ident::PeptideHit
   module Qvalue
-    attr_accessor :qvalue
     FILE_EXTENSION = '.phq.tsv'
     FILE_DELIMITER = "\t"
     HEADER = %w(aaseq charge qvalue)
@@ -51,5 +50,4 @@ class Ms::Ident::PeptideHit
 
     end
   end # Qvalue
-  include Qvalue
 end # Peptide Hit
