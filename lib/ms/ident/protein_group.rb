@@ -28,7 +28,12 @@ module Ms
       # accuracy.
       #
       # returns an array of ProteinGroup objects, each set with :peptide_hits
-      def self.peptide_hits_to_protein_groups(peptide_hits, &sort_by)
+      #
+      # If update_peptide_hits is true, then each peptide_hit is linked to the array
+      # of protein_groups it is associated with using :protein_groups.  A
+      # symbol can also be passed in, and that method will be called instead.
+      def self.peptide_hits_to_protein_groups(peptide_hits, update_peptide_hits=false, &sort_by)
+        update_peptide_hits = 'protein_groups='.to_sym if (update_peptide_hits==true)
         sort_by ||= PRIORITIZE_PROTEINS
         # note to self: I wrote this in 2011, so I think I know what I'm doing now
         protein_to_peptides = Hash.new {|h,k| h[k] = Set.new }
@@ -63,6 +68,9 @@ module Ms
           end
           group.peptide_hits = peptide_set if has_an_unaccounted_peptide
           has_an_unaccounted_peptide
+        end
+        if update_peptide_hits
+          greedy_first.each {|pg, pephits| pephits.each {|hit| hit.send(update_peptide_hits, pg) } } 
         end
         greedy_first.map(&:first)
       end

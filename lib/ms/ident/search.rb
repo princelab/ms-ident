@@ -7,6 +7,11 @@ module Ms
       attr_accessor :peptide_hits
       alias_method :hits, :peptide_hits
 
+      def initialize(id=nil, peptide_hits=[])
+        @id = id
+        @peptide_hits = peptide_hits
+      end
+
       # returns an array of peptide_hits and protein_hits that are linked to
       # one another.  NOTE: this will update peptide and protein
       # hits :proteins and :peptides attributes respectively).  Assumes that each search
