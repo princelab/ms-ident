@@ -128,7 +128,7 @@ class Ms::Ident::Peptide::Db < Hash
     final_outfile = base + ".min_aaseq#{min_length}" + ".yml"
 
     start_time = Time.now
-    print "Writing results to #{} ..." if $VERBOSE
+    print "Writing #{hash.size} peptides to #{} ..." if $VERBOSE
 
     File.open(final_outfile, 'w') do |out|
       hash.each do |k,v|
